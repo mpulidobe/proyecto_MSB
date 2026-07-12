@@ -13,6 +13,8 @@ def continuo_jacket(t, Y):
     
     #Tasa especifica de crecimiento
     miu = (miu_max * S_calc * Kix * np.exp(-P_calc/Kpx))/(Ksx + S_calc)*(Kix + S_calc)
+    qs = (qs_max * S_calc * Kis * np.exp(-P_calc/Kps))/(Kss + S_calc)*(Kis + S_calc)
+    qp = (qp_max * S_calc * Kip * np.exp(-P_calc/Kpp))/(Ksp + S_calc)*(Kip + S_calc)
     
     #Controlador
     Error = Tr - T_setpoint
@@ -28,10 +30,16 @@ def continuo_jacket(t, Y):
         dI = Error
         
     #Ecuaciones diferenciales de las variables de estado
-    dX = miu * X #Porque se tienen membrana ideal
-    
+    dX = miu * X_calc #Porque se tienen membrana ideal
+    dS = (F/V_reactor) * (S_in - S_calc) - qs * X
+    dP = alpha * dX + qp * X
+    dTr = (F/V_reactor)
+    dTj = (F/V_jacket)
+    return [dX, dS, dP, dTr, dTj, dI]
 
 ##Parametros
+V_reactor = 20 #[L]
+S_in = 10 #[g/L]
 Kd = 0.0001 #coeficiente de muerte celular [h^-1]
 miu_max = 1.09 #tasa de crecimiento especifica maxima [h^-1]
 qs_max = 4.16 #tasa de utilizacion de sustrato especifica maxima [g/g*h]
@@ -54,7 +62,7 @@ Kps = 20.07 #Inhibicion del producto para el consumo de sustrato [g/L]
 Kpp = 42.83 #Inhibicion del producto para la produccion de lactato [g/L]
 
 #Propiedades fisicas
-rho = 1 #[kg/L]
+rho = 1000 #[g/L]
 Cp = 1 #[kcal/kg*°C]
 
 #Chaqueta de enfriamiento
