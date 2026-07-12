@@ -4,6 +4,19 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.integrate import solve_ivp
 
+def continuo_jacket(t, Y):
+    X, S, P, Tr, Tj, I = Y
+    
+    X_calc = max(0, X)
+    S_calc = max(0, S)
+    P_calc = max(0, P)
+    
+    #Tasa especifica de crecimiento
+    miu = (miu_max * S_calc * Kix * np.exp(-P/Kpx))/(Ksx + S)*(Kix + S)
+    
+    #Controlador
+    Error = Tr - T_setpoint
+
 ##Parametros
 Kd = 0.0001 #coeficiente de muerte celular [h^-1]
 miu_max = 1.09 #tasa de crecimiento especifica maxima [h^-1]
