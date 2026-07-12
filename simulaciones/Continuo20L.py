@@ -12,10 +12,24 @@ def continuo_jacket(t, Y):
     P_calc = max(0, P)
     
     #Tasa especifica de crecimiento
-    miu = (miu_max * S_calc * Kix * np.exp(-P/Kpx))/(Ksx + S)*(Kix + S)
+    miu = (miu_max * S_calc * Kix * np.exp(-P_calc/Kpx))/(Ksx + S_calc)*(Kix + S_calc)
     
     #Controlador
     Error = Tr - T_setpoint
+    F_control = F0 + Kp * Error + (Kp/Ti) * I
+    F = np.clip(F_control, F_min, F_max)
+    
+    #Evitar windup
+    if F_control > F_max and Error > 0:
+        dI = 0
+    elif F_control < F_min and Error < 0:
+        dI = 0
+    else:
+        dI = Error
+        
+    #Ecuaciones diferenciales de las variables de estado
+    dX = miu * X #Porque se tienen membrana ideal
+    
 
 ##Parametros
 Kd = 0.0001 #coeficiente de muerte celular [h^-1]
