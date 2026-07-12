@@ -52,6 +52,9 @@ UA = 30 #[kcal/h*°C]
 T_setpoint = 30 #[°C]
 Kp = 5 #[L/h*°C]
 Ti = 10 #[h]
+F0 = 0.2 #[L/h]
+F_min = 0 #[L/h]
+F_max = 10 #[L/h]
 
 #Rendimientos (Ypx, Yps, Yxs)
 
