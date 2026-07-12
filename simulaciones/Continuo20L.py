@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.integrate import solve_ivp
 
-#Parametros
+##Parametros
 Kd = 0.0001 #coeficiente de muerte celular [h^-1]
 miu_max = 1.09 #tasa de crecimiento especifica maxima [h^-1]
 qs_max = 4.16 #tasa de utilizacion de sustrato especifica maxima [g/g*h]
@@ -25,6 +25,20 @@ Kip = 373.89 #Inhibicion del sustrato para la produccion de lactato [g/L]
 Kpx = 5.001 #Inhibicion del producto para el crecimiento de la biomasa [g/L]                 
 Kps = 20.07 #Inhibicion del producto para el consumo de sustrato [g/L]
 Kpp = 42.83 #Inhibicion del producto para la produccion de lactato [g/L]
+
+#Propiedades fisicas
+rho = 1 #[kg/L]
+Cp = 1 #[kcal/kg*°C]
+
+#Chaqueta de enfriamiento
+V_jacket = 2 #[L]
+Tj_entrada = 10
+UA = 30 #[kcal/h*°C]
+
+#Parametros del controlador PI
+T_setpoint = 30 #[°C]
+Kp = 5 #[L/h*°C]
+Ti = 10 #[h]
 
 #Rendimientos (Ypx, Yps, Yxs)
 
