@@ -96,7 +96,7 @@ Tj0 = 25 #[°C]
 I0 = 0 #[°C*h]
 array_iniciales = np.array([X0, S0, P0, Tr0, Tj0, I0])
 
-#Definir el tiempo
+#Tiempo de ejecucion
 t_start = 0
 t_stop = 20
 tspan = (t_start, t_stop)
