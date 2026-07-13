@@ -13,8 +13,8 @@ def continuo_jacket(t, Y):
     
     #Tasa especifica de crecimiento
     miu = (miu_max * S_calc * Kix * np.exp(-P_calc/Kpx))/((Ksx + S_calc)*(Kix + S_calc))
-    qs = (qs_max * S_calc * Kis * np.exp(-P_calc/Kps))/(Kss + S_calc)*(Kis + S_calc)
-    qp = (qp_max * S_calc * Kip * np.exp(-P_calc/Kpp))/(Ksp + S_calc)*(Kip + S_calc)
+    qs = (qs_max * S_calc * Kis * np.exp(-P_calc/Kps))/((Kss + S_calc)*(Kis + S_calc))
+    qp = (qp_max * S_calc * Kip * np.exp(-P_calc/Kpp))/((Ksp + S_calc)*(Kip + S_calc))
     
     #Tasa volumetrica de generacion de energia
     rQ = (Yqs * miu * X_calc) / Yxs
@@ -35,8 +35,8 @@ def continuo_jacket(t, Y):
     #Ecuaciones diferenciales de las variables de estado
     dX = (miu - Kd)* X_calc #Porque se tienen membrana ideal
     dS = (F_feed/V_reactor) * (S_in - S_calc) - qs * X_calc
-    dP = alpha * dX + qp * X_calc
-    dTr = (F_feed/V_reactor) * (Tr0 - Tr) + (rQ / rho * Cp) - (UA * (Tr - Tj)) / (rho * V_reactor * Cp)
+    dP = alpha * dX + qp * X_calc - (F_feed/V_reactor) * P_calc
+    dTr = (F_feed/V_reactor) * (Tr0 - Tr) + (rQ / (rho * Cp)) - (UA * (Tr - Tj)) / (rho * V_reactor * Cp)
     dTj = (F/V_jacket) * (Tj_entrada - Tj) + (UA * (Tr - Tj)) / (rho * V_jacket * Cp)
     return [dX, dS, dP, dTr, dTj, dI]
 
@@ -72,7 +72,7 @@ Cp = 4.182 #Capacidad calorifica del medio [J/g*°C]
 #Chaqueta de enfriamiento
 V_jacket = 2 #Volumen de la chaqueta [L]
 Tj_entrada = 10 #[°C]
-UA = 150000 #[J/h*°C]
+UA = 75 * 3600 #[J/h*°C]
 
 #Rendimientos (Ypx, Yps, Yxs)
 Yps = 0.72 #Rendimiento de producto[g/g]
@@ -91,15 +91,15 @@ F_max = 10 #[L/h]
 #Condiciones iniciales
 X0 = 0.1 #[g/L]
 S0 = 25 #[g/L]
-P0 = 10 #[g/L]
-Tr0 = 25 #[°C]
+P0 = 0 #[g/L]
+Tr0 = 35 #[°C]
 Tj0 = 25 #[°C]
 I0 = 0 #[°C*h]
 array_iniciales = np.array([X0, S0, P0, Tr0, Tj0, I0])
 
 #Tiempo de ejecucion
 t_start = 0
-t_stop = 20
+t_stop = 80
 tspan = (t_start, t_stop)
 t_array = np.linspace(t_start, t_stop, num=1000)
 
