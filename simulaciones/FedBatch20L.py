@@ -33,9 +33,9 @@ def fedbatch_jacket(t, Y):
         dI = Error
         
     #Ecuaciones diferenciales de las variables de estado
-    dX = (miu - Kd)* X_calc #Porque se tienen membrana ideal
+    dX = (miu - Kd)* X_calc - (F_feed/V_reactor) * X_calc
     dS = (F_feed/V_reactor) * (S_in - S_calc) - qs * X_calc
-    dP = alpha * dX + qp * X_calc - (F_feed/V_reactor) * P_calc
+    dP = (alpha * (miu - Kd) * X_calc + qp * X_calc) - (F_feed/V_reactor) * P_calc
     dTr = (F_feed/V_reactor) * (Tr0 - Tr) + (rQ / (rho * Cp)) - (UA * (Tr - Tj)) / (rho * V_reactor * Cp)
     dTj = (F/V_jacket) * (Tj_entrada - Tj) + (UA * (Tr - Tj)) / (rho * V_jacket * Cp)
     return [dX, dS, dP, dTr, dTj, dI]
@@ -104,7 +104,7 @@ tspan = (t_start, t_stop)
 t_array = np.linspace(t_start, t_stop, num=1000)
 
 #Metodo numerico
-solucion = solve_ivp(continuo_jacket, tspan, array_iniciales, t_eval = t_array)
+solucion = solve_ivp(fedbatch_jacket, tspan, array_iniciales, t_eval = t_array)
 
 Tiempo = solucion.t
 Biomasa = solucion.y[0]
