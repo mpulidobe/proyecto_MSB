@@ -89,8 +89,8 @@ F_min = 0 #[L/h]
 F_max = 10 #[L/h]
 
 #Condiciones iniciales
-X0 = 0.1 #[g/L]
-S0 = 25 #[g/L]
+X0 = 0.5 #[g/L]
+S0 = 10 #[g/L]
 P0 = 0 #[g/L]
 Tr0 = 35 #[°C]
 Tj0 = 25 #[°C]
