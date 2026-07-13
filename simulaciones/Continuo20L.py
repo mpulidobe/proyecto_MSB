@@ -35,8 +35,8 @@ def continuo_jacket(t, Y):
     #Ecuaciones diferenciales de las variables de estado
     dX = (miu - Kd)* X_calc #Porque se tienen membrana ideal
     dS = (F_feed/V_reactor) * (S_in - S_calc) - qs * X_calc
-    dP = alpha * dX + qp * X_calc
-    dTr = (F_feed/V_reactor) * (Tr0 - Tr) + (rQ / rho * Cp) - (UA * (Tr - Tj)) / (rho * V_reactor * Cp)
+    dP = alpha * dX + qp * X_calc - (F_feed/V_reactor) * P_calc
+    dTr = (F_feed/V_reactor) * (Tr0 - Tr) + (rQ / (rho * Cp)) - (UA * (Tr - Tj)) / (rho * V_reactor * Cp)
     dTj = (F/V_jacket) * (Tj_entrada - Tj) + (UA * (Tr - Tj)) / (rho * V_jacket * Cp)
     return [dX, dS, dP, dTr, dTj, dI]
 
@@ -91,7 +91,7 @@ F_max = 10 #[L/h]
 #Condiciones iniciales
 X0 = 0.1 #[g/L]
 S0 = 25 #[g/L]
-P0 = 10 #[g/L]
+P0 = 0 #[g/L]
 Tr0 = 35 #[°C]
 Tj0 = 25 #[°C]
 I0 = 0 #[°C*h]
