@@ -33,7 +33,7 @@ def continuo_jacket(t, Y):
     dX = miu * X_calc #Porque se tienen membrana ideal
     dS = (F/V_reactor) * (S_in - S_calc) - qs * X
     dP = alpha * dX + qp * X
-    dTr = (F/V_reactor)
+    dTr = (F/V_reactor) * (T0 - Tr) + rq / rho * cp
     dTj = (F/V_jacket)
     return [dX, dS, dP, dTr, dTj, dI]
 
@@ -62,12 +62,12 @@ Kps = 20.07 #Inhibicion del producto para el consumo de sustrato [g/L]
 Kpp = 42.83 #Inhibicion del producto para la produccion de lactato [g/L]
 
 #Propiedades fisicas
-rho = 1000 #[g/L]
-Cp = 1 #[kcal/kg*°C]
+rho = 1000 #Densidad del medio [g/L]
+Cp = 1 #Capacidad calorifica del medio [kcal/kg*°C]
 
 #Chaqueta de enfriamiento
-V_jacket = 2 #[L]
-Tj_entrada = 10
+V_jacket = 2 #Volumen de la chaqueta[L]
+Tj_entrada = 10 #[°C]
 UA = 30 #[kcal/h*°C]
 
 #Parametros del controlador PI
