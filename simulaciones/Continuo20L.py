@@ -104,3 +104,28 @@ t_array = np.linspace(t_start, t_stop, num=1000)
 
 #Metodo numerico
 solucion = solve_ivp(continuo_jacket, tspan, array_iniciales, t_eval = t_array)
+
+Tiempo = solucion.t
+Biomasa = solucion.y[0]
+Sustrato = solucion.y[1]
+Producto = solucion.y[2]
+T_reactor = solucion.y[3]
+T_jacket = solucion.y[4]
+Integral_error = solucion.y[5]
+Error = T_reactor - T_setpoint
+F_valor = F0 + Kp * Error + (Kp/Ti)*Integral_error
+F = np.clip(F_valor, F_min, F_max)
+
+#Grafica 
+f1, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2)
+ax1.plot(Tiempo, Biomasa, label = 'Biomasa', color = 'red')
+ax1.plot(Tiempo, Sustrato, label = 'Sustrato', color = 'blue')
+ax2.plot(Tiempo, T_reactor, label = 'Temperatura reactor', color = 'orange')
+ax2.plot(Tiempo, T_jacket, label = 'Temperatura serpentin', color = 'purple')
+ax2.axhline(T_setpoint, color = 'darkred', linestyle='--', label = 'Set point')
+ax3.plot(Tiempo, Error, label = 'Error', color = 'gold')
+ax4.plot(Tiempo, F, label = 'Flujo real', color = 'magenta')
+
+for i in [ax1, ax2, ax3, ax4]:
+    i.grid()
+    i.legend()
