@@ -12,7 +12,7 @@ def continuo_jacket(t, Y):
     P_calc = max(0, P)
     
     #Tasa especifica de crecimiento
-    miu = (miu_max * S_calc * Kix * np.exp(-P_calc/Kpx))/(Ksx + S_calc)*(Kix + S_calc)
+    miu = (miu_max * S_calc * Kix * np.exp(-P_calc/Kpx))/((Ksx + S_calc)*(Kix + S_calc))
     qs = (qs_max * S_calc * Kis * np.exp(-P_calc/Kps))/(Kss + S_calc)*(Kis + S_calc)
     qp = (qp_max * S_calc * Kip * np.exp(-P_calc/Kpp))/(Ksp + S_calc)*(Kip + S_calc)
     
@@ -33,16 +33,17 @@ def continuo_jacket(t, Y):
         dI = Error
         
     #Ecuaciones diferenciales de las variables de estado
-    dX = miu * X_calc #Porque se tienen membrana ideal
-    dS = (F/V_reactor) * (S_in - S_calc) - qs * X
-    dP = alpha * dX + qp * X
-    dTr = (F/V_reactor) * (Tr0 - Tr) + (rQ / rho * Cp) - UA * (Tr - Tj) / rho * V_reactor * Cp
-    dTj = (F/V_jacket) * (Tr0 - Tr) + UA * (Tr - Tj) / rho * V_reactor * Cp
+    dX = (miu - Kd)* X_calc #Porque se tienen membrana ideal
+    dS = (F_feed/V_reactor) * (S_in - S_calc) - qs * X_calc
+    dP = alpha * dX + qp * X_calc
+    dTr = (F_feed/V_reactor) * (Tr0 - Tr) + (rQ / rho * Cp) - (UA * (Tr - Tj)) / (rho * V_reactor * Cp)
+    dTj = (F/V_jacket) * (Tj_entrada - Tj) + (UA * (Tr - Tj)) / (rho * V_jacket * Cp)
     return [dX, dS, dP, dTr, dTj, dI]
 
 ##Parametros
 V_reactor = 20 #[L]
 S_in = 10 #[g/L]
+F_feed = 1 #[L/h]
 Kd = 0.0001 #coeficiente de muerte celular [h^-1]
 miu_max = 1.09 #tasa de crecimiento especifica maxima [h^-1]
 qs_max = 4.16 #tasa de utilizacion de sustrato especifica maxima [g/g*h]
@@ -69,21 +70,21 @@ rho = 1000 #Densidad del medio [g/L]
 Cp = 4.182 #Capacidad calorifica del medio [J/g*°C]
 
 #Chaqueta de enfriamiento
-V_jacket = 2 #Volumen de la chaqueta[L]
+V_jacket = 2 #Volumen de la chaqueta [L]
 Tj_entrada = 10 #[°C]
-UA = 30 #[J/h*°C]
+UA = 150000 #[J/h*°C]
 
 #Rendimientos (Ypx, Yps, Yxs)
 Yps = 0.72 #Rendimiento de producto[g/g]
 Yxs = 0.074 #Rendimiento de biomasa [g/g]
 Ypx = Yps/Yxs #Rendimiento de producto [g/g]
-Yqs = 3.963 #Rendimiento termico [kJ/g]
+Yqs = 3963 #Rendimiento termico [J/g]
 
 #Parametros del controlador PI
 T_setpoint = 30 #[°C]
-Kp = 5 #[L/h*°C]
-Ti = 10 #[h]
-F0 = 0.2 #[L/h]
+Kp = 9.59 #[L/h*°C]
+Ti = 3.66 #[h]
+F0 = 5 #[L/h]
 F_min = 0 #[L/h]
 F_max = 10 #[L/h]
 
@@ -121,7 +122,7 @@ f1, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2)
 ax1.plot(Tiempo, Biomasa, label = 'Biomasa', color = 'red')
 ax1.plot(Tiempo, Sustrato, label = 'Sustrato', color = 'blue')
 ax2.plot(Tiempo, T_reactor, label = 'Temperatura reactor', color = 'orange')
-ax2.plot(Tiempo, T_jacket, label = 'Temperatura serpentin', color = 'purple')
+ax2.plot(Tiempo, T_jacket, label = 'Temperatura chaqueta', color = 'purple')
 ax2.axhline(T_setpoint, color = 'darkred', linestyle='--', label = 'Set point')
 ax3.plot(Tiempo, Error, label = 'Error', color = 'gold')
 ax4.plot(Tiempo, F, label = 'Flujo real', color = 'magenta')
