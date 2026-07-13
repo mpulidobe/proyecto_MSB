@@ -33,7 +33,7 @@ def continuo_jacket(t, Y):
     dX = miu * X_calc #Porque se tienen membrana ideal
     dS = (F/V_reactor) * (S_in - S_calc) - qs * X
     dP = alpha * dX + qp * X
-    dTr = (F/V_reactor) * (T0 - Tr) + rq / rho * cp
+    dTr = (F/V_reactor) * (Tr0 - Tr) + rq / rho * Cp
     dTj = (F/V_jacket)
     return [dX, dS, dP, dTr, dTj, dI]
 
@@ -63,12 +63,18 @@ Kpp = 42.83 #Inhibicion del producto para la produccion de lactato [g/L]
 
 #Propiedades fisicas
 rho = 1000 #Densidad del medio [g/L]
-Cp = 1 #Capacidad calorifica del medio [kcal/kg*°C]
+Cp = 4.182 #Capacidad calorifica del medio [J/g*°C]
 
 #Chaqueta de enfriamiento
 V_jacket = 2 #Volumen de la chaqueta[L]
 Tj_entrada = 10 #[°C]
-UA = 30 #[kcal/h*°C]
+UA = 30 #[J/h*°C]
+
+#Rendimientos (Ypx, Yps, Yxs)
+Yps = 0.72 #Rendimiento de producto[g/g]
+Yxs = 0.074 #Rendimiento de biomasa [g/g]
+Ypx = Yps/Yxs #Rendimiento de producto [g/g]
+Yqs = 3.963 #Rendimiento termico [kJ/g]
 
 #Parametros del controlador PI
 T_setpoint = 30 #[°C]
@@ -78,5 +84,9 @@ F0 = 0.2 #[L/h]
 F_min = 0 #[L/h]
 F_max = 10 #[L/h]
 
-#Rendimientos (Ypx, Yps, Yxs)
-
+#Condiciones iniciales
+X0 = 0.1 #[g/L]
+S0 = 25 #[g/L]
+Tr0 = 25 #[°C]
+Tj0 = 25 #[°C]
+I0 = 0 #[°C*h]
