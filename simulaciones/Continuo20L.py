@@ -16,6 +16,9 @@ def continuo_jacket(t, Y):
     qs = (qs_max * S_calc * Kis * np.exp(-P_calc/Kps))/(Kss + S_calc)*(Kis + S_calc)
     qp = (qp_max * S_calc * Kip * np.exp(-P_calc/Kpp))/(Ksp + S_calc)*(Kip + S_calc)
     
+    #Tasa volumetrica de generacion de energia
+    rQ = (Yqs * miu * X_calc) / Yxs
+    
     #Controlador
     Error = Tr - T_setpoint
     F_control = F0 + Kp * Error + (Kp/Ti) * I
@@ -33,8 +36,8 @@ def continuo_jacket(t, Y):
     dX = miu * X_calc #Porque se tienen membrana ideal
     dS = (F/V_reactor) * (S_in - S_calc) - qs * X
     dP = alpha * dX + qp * X
-    dTr = (F/V_reactor) * (Tr0 - Tr) + rq / rho * Cp
-    dTj = (F/V_jacket)
+    dTr = (F/V_reactor) * (Tr0 - Tr) + (rQ / rho * Cp) - UA * (Tr - Tj) / rho * V_reactor * Cp
+    dTj = (F/V_jacket) * (Tr0 - Tr) + UA * (Tr - Tj) / rho * V_reactor * Cp
     return [dX, dS, dP, dTr, dTj, dI]
 
 ##Parametros
@@ -87,6 +90,17 @@ F_max = 10 #[L/h]
 #Condiciones iniciales
 X0 = 0.1 #[g/L]
 S0 = 25 #[g/L]
+P0 = 10 #[g/L]
 Tr0 = 25 #[°C]
 Tj0 = 25 #[°C]
 I0 = 0 #[°C*h]
+array_iniciales = np.array([X0, S0, P0, Tr0, Tj0, I0])
+
+#Definir el tiempo
+t_start = 0
+t_stop = 20
+tspan = (t_start, t_stop)
+t_array = np.linspace(t_start, t_stop, num=1000)
+
+#Metodo numerico
+solucion = solve_ivp(continuo_jacket, tspan, array_iniciales, t_eval = t_array)
