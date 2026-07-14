@@ -5,11 +5,6 @@ import matplotlib.pyplot as plt
 from scipy.integrate import solve_ivp
 from matplotlib.widgets import Slider, Button
 
-try:
-    from scipy.integrate import trapezoid
-except ImportError:
-    from scipy.integrate import trapz as trapezoid
-
 def continuo_jacket(t, Y, miu_max, qp_max, Kix, Kip):
     X, S, P, Tr, Tj, I = Y
 
@@ -105,7 +100,6 @@ P0 = 0 #[g/L]
 Tr0 = 30 #[°C]
 Tj0 = 29 #[°C]
 I0 = 0 #[°C*h]
-P_acumulado0 = 0 #[g/L]
 array_iniciales = np.array([X0, S0, P0, Tr0, Tj0, I0])
 
 #Tiempo de ejecucion
@@ -124,12 +118,13 @@ Producto = solucion.y[2]
 T_reactor = solucion.y[3]
 T_jacket = solucion.y[4]
 Integral_error = solucion.y[5]
-Producto_acumulado = solucion.y[6]
 Volumen = np.ones_like(Tiempo) * V_reactor
 
 Error = T_reactor - T_setpoint
 F_valor = F0 + Kp * Error + (Kp/Ti) * Integral_error
 F = np.clip(F_valor, F_min, F_max)
+
+#Fijar los valores de los parametros en _base
 miu_max_base = miu_max
 qp_max_base = qp_max
 Kix_base = Kix
