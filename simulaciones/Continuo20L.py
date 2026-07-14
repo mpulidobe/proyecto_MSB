@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from scipy.integrate import solve_ivp
 
 def continuo_jacket(t, Y):
-    X, S, P, Tr, Tj, I = Y
+    X, S, P, Tr, Tj, I, P_acumulado = Y
     
     X_calc = max(0, X)
     S_calc = max(0, S)
@@ -44,7 +44,7 @@ def continuo_jacket(t, Y):
     dTr = D * (T_feed - Tr) + (rQ / (rho * Cp)) - (UA * (Tr - Tj)) / (rho * V_reactor * Cp)
     dTj = (F/V_jacket) * (Tj_entrada - Tj) + (UA * (Tr - Tj)) / (rho * V_jacket * Cp)
     dP_acumulado = 0 if t<5 else F_feed * P_calc
-    return [dX, dS, dP, dTr, dTj, dI]
+    return [dX, dS, dP, dTr, dTj, dI, dP_acumulado]
 
 ##Parametros
 V_reactor = 20 #[L]
@@ -208,8 +208,6 @@ def objective (x):
 
     ##Parametros
     V_reactor = 20 #[L]
-    S_in = 10 #[g/L]
-    F_feed = 1 #[L/h]
     T_feed = 25 #[°C]
     Kd = 0.0001 #coeficiente de muerte celular [h^-1]
     miu_max = 1.09 #tasa de crecimiento especifica maxima [h^-1]
