@@ -32,8 +32,11 @@ def continuo_jacket(t, Y):
     else:
         dI = Error
         
-    D = F_feed/V_reactor
-        
+    if t < 5:
+        D = 0
+    else:
+        D = F_feed/V_reactor
+    
     #Ecuaciones diferenciales de las variables de estado
     dX = (miu - Kd)* X_calc #Porque se tienen membrana ideal
     dS = D * (S_in - S_calc) - qs * X_calc
@@ -435,8 +438,7 @@ def continuo_jacket(t, Y):
     return [dX, dS, dP, dTr, dTj, dI, dP_acumulado]
 
 ##Parametros
-V0 = 1.5 #[L] volumen inicial de caldo en el reactor 
-V_max = 20 #[L] volumen maximo de operacion del reactor 
+V_reactor = 20 #[L] volumen maximo de operacion del reactor 
 S_in = 10 #[g/L]
 F_feed = 0.1 #[L/h]
 T_feed = 25 #[°C] temperatura de la corriente de alimentacion 
@@ -512,27 +514,17 @@ T_reactor = solucion.y[3]
 T_jacket = solucion.y[4]
 Integral_error = solucion.y[5]
 Producto_acumulado = solucion.y[6]
+#Volumen = np.ones_like(Tiempo) * V_reactor
 
 Error = T_reactor - T_setpoint
 F_valor = F0 + Kp * Error + (Kp/Ti) * Integral_error
 F = np.clip(F_valor, F_min, F_max)
 
-#--- Resumen numerico util para el informe ---
-t_fin_alimentacion = Tiempo[Volumen >= V_max]
-t_fin_alimentacion = t_fin_alimentacion[0] if len(t_fin_alimentacion) > 0 else None
+#Resumen numerico
 
-# CÁLCULOS ADICIONALES
-
-conversion = (S0 + (S_in * (Volumen[-1] - V0)) / Volumen[-1] - Sustrato[-1]) / \
-             (S0 + (S_in * (Volumen[-1] - V0)) / Volumen[-1])
-
-producto_total = Producto[-1] * Volumen[-1]
-biomasa_total = Biomasa[-1] * Volumen[-1]
-substrato_alimentado = (Volumen[-1] - V0) * S_in
-
-Yps_real = producto_total / substrato_alimentado
-Yxs_real = biomasa_total / substrato_alimentado
-Pv = producto_total / (Volumen[-1] * Tiempo[-1])
+producto_total = Producto[-1] * V_reactor
+biomasa_total = Biomasa[-1] * V_reactor
+Pv = producto_total / (V_reactor * Tiempo[-1])
 
 Q = np.trapezoid(UA * (T_reactor - T_jacket), Tiempo)
 
@@ -543,15 +535,6 @@ print("          RESULTADOS DE LA SIMULACIÓN")
 print("="*60)
 
 print("\n--- Operación del reactor ---")
-print(f"Volumen inicial                 : {V0:.2f} L")
-print(f"Volumen final                   : {Volumen[-1]:.2f} L")
-
-if t_fin_alimentacion is not None:
-    print(f"Fin de la alimentación          : {t_fin_alimentacion:.2f} h")
-else:
-    print("Fin de la alimentación          : No alcanza Vmax")
-
-print(f"Tiempo total de simulación      : {Tiempo[-1]:.2f} h")
 
 # BIOMASA, SUSTRATO Y PRODUCTO
 
@@ -561,20 +544,16 @@ print(f"Biomasa máxima                  : {Biomasa.max():.3f} g/L")
 print(f"Tiempo biomasa máxima           : {Tiempo[np.argmax(Biomasa)]:.2f} h")
 
 print(f"Sustrato final                  : {Sustrato[-1]:.3f} g/L")
-print(f"Conversión de sustrato          : {conversion*100:.2f} %")
 
 print(f"Producto final                  : {Producto[-1]:.3f} g/L")
 print(f"Producto total                  : {producto_total:.2f} g")
 
 print(f"Biomasa total                   : {biomasa_total:.2f} g")
-print(f"Sustrato alimentado             : {substrato_alimentado:.2f} g")
 
-# RENDIMIENTOS
+# Indicador de desempeño
 
 print("\n--- Indicadores de desempeño ---")
 print(f"Productividad volumétrica       : {Pv:.3f} g/L·h")
-print(f"Rendimiento Yps real            : {Yps_real:.3f} g/g")
-print(f"Rendimiento Yxs real            : {Yxs_real:.3f} g/g")
 
 
 # CONTROL DE TEMPERATURA
