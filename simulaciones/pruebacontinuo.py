@@ -1,0 +1,531 @@
+'''Cultivo continuo con recirculacion de biomasa biorreactor 20L HCW'''
+
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.integrate import solve_ivp
+
+def continuo_jacket(t, Y):
+    X, S, P, Tr, Tj, I = Y
+
+    X_calc = max(0, X)
+    S_calc = max(0, S)
+    P_calc = max(0, P)
+
+    #Tasa especifica de crecimiento
+    miu = (miu_max * S_calc * Kix * np.exp(-P_calc/Kpx))/((Ksx + S_calc)*(Kix + S_calc))
+    qs = (qs_max * S_calc * Kis * np.exp(-P_calc/Kps))/((Kss + S_calc)*(Kis + S_calc))
+    qp = (qp_max * S_calc * Kip * np.exp(-P_calc/Kpp))/((Ksp + S_calc)*(Kip + S_calc))
+
+    #Tasa volumetrica de generacion de energia metabolica
+    rQ = Yqs * qs * X_calc
+
+    #--- Dilucion (alimentacion continua, volumen de reactor constante)
+    D = F_feed / V_reactor #Tasa de dilucion [h^-1]
+
+    #Controlador PI del flujo de refrigerante en la chaqueta
+    Error = Tr - T_setpoint
+    Fc_control = F0 + Kp * Error + (Kp/Ti) * I
+    Fc = np.clip(Fc_control, F_min, F_max) #Caudal de agua de enfriamiento
+
+    #Anti-windup
+    if (Fc_control > F_max and Error > 0) or (Fc_control < F_min and Error < 0):
+        dI = 0
+    else:
+        dI = Error
+
+    #Balances de masa (membrana ideal: retencion de biomasa = 1, retencion de producto = 0)
+    dX = (miu - Kd) * X_calc #No hay termino de dilucion: toda la biomasa se recircula
+    dS = D * (S_in - S_calc) - qs * X_calc
+    dP = alpha * (miu - Kd) * X_calc + qp * X_calc - D * P_calc #El producto sale libremente con el permeado
+
+    #Balance de energia
+    dTr = D * (T_feed - Tr) + (rQ / (rho * Cp)) - (UA * (Tr - Tj)) / (rho * V_reactor * Cp) # Temperatura en el reactor
+    dTj = (Fc/V_jacket) * (Tj_entrada - Tj) + (UA * (Tr - Tj)) / (rho * V_jacket * Cp) #Temperatura chaqueta
+    return [dX, dS, dP, dTr, dTj, dI]
+
+##Parametros
+V_reactor = 20 #[L]
+S_in = 10 #[g/L]
+F_feed = 1 #[L/h]
+T_feed = 25 #[°C]
+Kd = 0.0001 #coeficiente de muerte celular [h^-1]
+miu_max = 1.09 #tasa de crecimiento especifica maxima [h^-1]
+qs_max = 4.16 #tasa de utilizacion de sustrato especifica maxima [g/g*h]
+qp_max = 1.863 #tasa de produccion de lactato especifica maxima [g/g*h]
+alpha = 0.017 #constante asociada al crecimiento en Luedeking-Piret [g/g]
+
+#Constantes de limitacion de sustrato
+Ksx = 4.229 #Limitacion de sustrato para el crecimiento de la biomasa [g/L]
+Kss = 0.15 #Limitacion de sustrato para el consumo de sustrato [g/L]
+Ksp = 0.065 #Limitacion de sustrato para la produccion de lactato [g/L]
+
+#Constantes de inhibicion por sustrato
+Kix = 394.20 #Inhibicion del sustrato para el crecimiento de la biomasa [g/L]
+Kis = 143.391 #Inhibicion del sustrato para el consumo de sustrato [g/L]
+Kip = 373.89 #Inhibicion del sustrato para la produccion de lactato [g/L]
+
+#Constantes de inhibicion por producto
+Kpx = 5.001 #Inhibicion del producto para el crecimiento de la biomasa [g/L]
+Kps = 20.07 #Inhibicion del producto para el consumo de sustrato [g/L]
+Kpp = 42.83 #Inhibicion del producto para la produccion de lactato [g/L]
+
+#Propiedades fisicas
+rho = 1000 #Densidad del medio [g/L]
+Cp = 4.182 #Capacidad calorifica del medio [J/g*°C]
+
+#Chaqueta de enfriamiento
+V_jacket = 2 #Volumen de la chaqueta [L]
+Tj_entrada = 5 #[°C]
+UA = 75 * 3600 #[J/h*°C]
+
+#Rendimientos (Ypx, Yps, Yxs)
+Yps = 0.72 #Rendimiento de producto[g/g]
+Yxs = 0.074 #Rendimiento de biomasa [g/g]
+Ypx = Yps/Yxs #Rendimiento de producto [g/g]
+Yqs = 3963 #Rendimiento termico [J/g]
+
+#Parametros del controlador PI
+T_setpoint = 30 #[°C]
+Kp = 9.59 #[L/h*°C]
+Ti = 3.66 #[h]
+F0 = 5 #[L/h]
+F_min = 0 #[L/h]
+F_max = 20 #[L/h]
+
+#Condiciones iniciales
+X0 = 0.43 #[g/L]
+S0 = 33 #[g/L]
+P0 = 0 #[g/L]
+Tr0 = 30 #[°C]
+Tj0 = 29 #[°C]
+I0 = 0 #[°C*h]
+array_iniciales = np.array([X0, S0, P0, Tr0, Tj0, I0])
+
+#Tiempo de ejecucion
+t_start = 0
+t_stop = 24
+tspan = (t_start, t_stop)
+t_array = np.linspace(t_start, t_stop, num=10000)
+
+#Metodo numerico
+solucion = solve_ivp(continuo_jacket, tspan, array_iniciales, t_eval=t_array, method='LSODA')
+
+Tiempo = solucion.t
+Biomasa = solucion.y[0]
+Sustrato = solucion.y[1]
+Producto = solucion.y[2]
+T_reactor = solucion.y[3]
+T_jacket = solucion.y[4]
+Integral_error = solucion.y[5]
+Volumen = np.ones_like(Tiempo) * V_reactor
+
+Error = T_reactor - T_setpoint
+F_valor = F0 + Kp * Error + (Kp/Ti)*Integral_error
+Fc = np.clip(F_valor, F_min, F_max)
+
+print(f"Volumen del reactor: {V_reactor:.2f} L (constante)")
+print(f"Tasa de dilución (D): {F_feed/V_reactor:.3f} h⁻¹")
+print(f"Biomasa final: {Biomasa[-1]:.3f} g/L (máxima: {Biomasa.max():.3f} g/L en t={Tiempo[np.argmax(Biomasa)]:.2f} h)")
+print(f"Sustrato final: {Sustrato[-1]:.3f} g/L")
+print(f"Producto (lactato) final: {Producto[-1]:.3f} g/L")
+print(f"Productividad volumétrica final: {(F_feed/V_reactor)*Producto[-1]:.3f} g/L·h")
+print(f"Temperatura del reactor: min={T_reactor.min():.2f} °C, max={T_reactor.max():.2f} °C")
+print(f"Flujo de refrigerante: min={Fc.min():.2f} L/h, max={Fc.max():.2f} L/h")
+
+#Grafica
+f1, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(11, 7))
+ax1.plot(Tiempo, Biomasa, label='Biomasa', color='red')
+ax1.plot(Tiempo, Sustrato, label='Sustrato', color='blue')
+ax1.plot(Tiempo, Producto, label='Producto (lactato)', color='green')
+ax1.set_xlabel('Tiempo [h]'); ax1.set_ylabel('Concentracion [g/L]')
+
+ax2.plot(Tiempo, T_reactor, label='Temperatura reactor', color='orange')
+ax2.plot(Tiempo, T_jacket, label='Temperatura chaqueta', color='purple')
+ax2.axhline(T_setpoint, color='darkred', linestyle='--', label='Set point')
+ax2.set_xlabel('Tiempo [h]'); ax2.set_ylabel('Temperatura [°C]')
+
+ax3.plot(Tiempo, Error, label='Error', color='gold')
+ax3.set_xlabel('Tiempo [h]'); ax3.set_ylabel('Error [°C]')
+
+ax4.plot(Tiempo, Fc, label='Flujo refrigerante real', color='magenta')
+ax4.plot(Tiempo, Volumen, label='Volumen reactor', color='teal')
+ax4.set_xlabel('Tiempo [h]')
+
+for i in [ax1, ax2, ax3, ax4]:
+    i.grid()
+    i.legend()
+
+plt.tight_layout()
+plt.show()
+
+# %%
+'''Cultivo continuo biorreactor 20L HCW - optimizacion 2D de D y S_in'''
+
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.integrate import solve_ivp
+from scipy.optimize import shgo
+
+def objective(x):
+    D_x, Sin_x = x #Variables de decision: tasa de dilucion [h^-1] y sustrato en la alimentacion [g/L]
+
+    def continuo_jacket(t, Y):
+        X, S, P, Tr, Tj, I = Y
+
+        X_calc = max(0, X)
+        S_calc = max(0, S)
+        P_calc = max(0, P)
+
+        #Tasa especifica de crecimiento
+        miu = (miu_max * S_calc * Kix * np.exp(-P_calc/Kpx))/((Ksx + S_calc)*(Kix + S_calc))
+        qs = (qs_max * S_calc * Kis * np.exp(-P_calc/Kps))/((Kss + S_calc)*(Kis + S_calc))
+        qp = (qp_max * S_calc * Kip * np.exp(-P_calc/Kpp))/((Ksp + S_calc)*(Kip + S_calc))
+
+        rQ = Yqs * qs * X_calc
+
+        D = D_x #Tasa de dilucion fija para esta evaluacion
+
+        Error = Tr - T_setpoint
+        Fc_control = F0 + Kp * Error + (Kp/Ti) * I
+        Fc = np.clip(Fc_control, F_min, F_max)
+
+        if (Fc_control > F_max and Error > 0) or (Fc_control < F_min and Error < 0):
+            dI = 0
+        else:
+            dI = Error
+        #balance de materia
+        dX = (miu - Kd) * X_calc
+        dS = D * (Sin_x - S_calc) - qs * X_calc
+        dP = alpha * (miu - Kd) * X_calc + qp * X_calc - D * P_calc
+        #balance de energia
+        dTr = D * (T_feed - Tr) + (rQ / (rho * Cp)) - (UA * (Tr - Tj)) / (rho * V_reactor * Cp)
+        dTj = (Fc/V_jacket) * (Tj_entrada - Tj) + (UA * (Tr - Tj)) / (rho * V_jacket * Cp)
+        return [dX, dS, dP, dTr, dTj, dI]
+
+    ##Parametros
+    V_reactor = 20 #[L]
+    F_feed = D_x * V_reactor #[L/h] (no se usa en el balance, solo referencia)
+    T_feed = 25 #[°C]
+    Kd = 0.0001 #[h^-1]
+    miu_max = 1.09 #[h^-1]
+    qs_max = 4.16 #[g/g*h]
+    qp_max = 1.863 #[g/g*h]
+    alpha = 0.017 #[g/g]
+
+    Ksx = 4.229; Kss = 0.15; Ksp = 0.065
+    Kix = 394.20; Kis = 143.391; Kip = 373.89
+    Kpx = 5.001; Kps = 20.07; Kpp = 42.83
+
+    rho = 1000; Cp = 4.182
+    V_jacket = 2; Tj_entrada = 5; UA = 75 * 3600
+    Yqs = 3963
+
+    T_setpoint = 30; Kp = 9.59; Ti = 3.66
+    F0 = 5; F_min = 0; F_max = 20
+
+    #Condiciones iniciales
+    X0, S0, P0, Tr0, Tj0, I0 = 0.43, 33, 0, 30, 29, 0
+    array_iniciales = np.array([X0, S0, P0, Tr0, Tj0, I0])
+
+    #Se integra por un tiempo largo para garantizar que el sistema alcance el estado estacionario
+    t_start, t_stop = 0, 150
+    tspan = (t_start, t_stop)
+    t_array = np.linspace(t_start, t_stop, num=500)
+
+    solucion = solve_ivp(continuo_jacket, tspan, array_iniciales, t_eval=t_array, method='LSODA')
+
+    if not solucion.success:
+        return 1e6
+
+    X_ss = solucion.y[0][-1]
+    P_ss = solucion.y[2][-1]
+
+    #Se penaliza el lavado del reactor (washout): D >= miu_max deja X_ss ~ 0
+    if X_ss < 1e-3:
+        return 0.0
+
+    #Productividad volumetrica en estado estacionario
+    Pv_ss = D_x * P_ss
+    return -Pv_ss #Se minimiza el negativo para maximizar la productividad
+
+print("Optimizando D y S_in...")
+result = shgo(objective, bounds=[(0.01, 1.08), (5, 100)], n=60, iters=2)
+D_opt, Sin_opt = result.x
+prod_max = -result.fun
+print(f"\n{'='*45}")
+print(f"  D óptima      : {D_opt:.4f} h⁻¹")
+print(f"  S_in óptimo    : {Sin_opt:.4f} g/L")
+print(f"  Productividad máxima (SS): {prod_max:.6f} g/(L·h)")
+print(f"{'='*45}\n")
+
+# %%
+'''Cultivo continuo biorreactor 20L HCW, sintonizacion del controlador PI'''
+import numpy as np
+from scipy.integrate import solve_ivp
+from scipy.optimize import minimize
+import matplotlib.pyplot as plt
+
+# 1. Parametros del sistema (usa D y S_in optimizados en la seccion anterior)
+V_reactor = 20
+D_op = 1.08
+S_in = 64.4440
+F_feed = D_op * V_reactor
+T_feed = 25.0
+T_setpoint = 30.0
+rho, Cp, Yqs = 1000.0, 4.182, 3963.0
+UA, V_jacket, Tj_entrada = 75*3600, 2.0, 5
+F0, F_min, F_max = 5, 0.0, 20.0
+
+# Parametros cineticos
+miu_max, qs_max, qp_max = 1.09, 4.16, 1.863
+Ksx, Kix, Kpx = 4.229, 394.20, 5.001
+Kss, Kis, Kps = 0.15, 143.391, 20.07
+Ksp, Kip, Kpp = 0.065, 373.89, 42.83
+alpha, Kd = 0.017, 0.0001
+
+# 2. Modelo dinamico para la simulacion
+def modelo_control(t, Y, Kp, Ti):
+    X, S, P, Tr, Tj, I = Y
+    X_c, S_c, P_c = max(0, X), max(0, S), max(0, P)
+
+    miu = (miu_max * S_c * Kix) / ((Ksx + S_c) * (Kix + S_c)) * np.exp(-P_c/Kpx)
+    qs = (qs_max * S_c * Kis) / ((Kss + S_c) * (Kis + S_c)) * np.exp(-P_c/Kps)
+    qp = (qp_max * S_c * Kip) / ((Ksp + S_c) * (Kip + S_c)) * np.exp(-P_c/Kpp)
+    rQ = Yqs * qs * X_c
+
+    D = F_feed / V_reactor
+
+    Error = Tr - T_setpoint
+    Fc_control = F0 + Kp * Error + (Kp/Ti) * I
+    Fc = np.clip(Fc_control, F_min, F_max)
+
+    dX = (miu - Kd) * X_c
+    dS = D * (S_in - S_c) - qs * X_c
+    dP = alpha * (miu - Kd) * X_c + qp * X_c - D * P_c
+    dTr = D * (T_feed - Tr) + (rQ/(rho*Cp)) - (UA*(Tr-Tj))/(rho*V_reactor*Cp)
+    dTj = (Fc/V_jacket)*(Tj_entrada - Tj) + (UA*(Tr-Tj))/(rho*V_jacket*Cp)
+    dI = 0 if (Fc_control > F_max and Error > 0) or (Fc_control < F_min and Error < 0) else Error
+
+    return [dX, dS, dP, dTr, dTj, dI]
+
+# 3. Funcion de costo: minimizacion del IAE (Error Integral Absoluto)
+def objetivo_iae(parametros):
+    Kp_opt, Ti_opt = parametros
+
+    if Kp_opt <= 0 or Ti_opt <= 0:
+        return 1e10
+
+    y0 = [0.43, 33, 0, 30.5, 29, 0]
+    t_span = (0, 24)
+    t_eval = np.linspace(0, 24, 200)
+
+    sol = solve_ivp(
+        modelo_control,
+        t_span,
+        y0,
+        args=(Kp_opt, Ti_opt),
+        t_eval=t_eval,
+        method='LSODA'
+    )
+
+    if not sol.success:
+        return 1e10
+
+    iae = np.trapezoid(np.abs(sol.y[3] - T_setpoint), sol.t)
+    return iae
+
+# 4. Ejecucion de la sintonizacion
+print("Sintonizando controlador... Por favor espere.")
+inv_inicial = [9.59, 3.66]
+resultado = minimize(objetivo_iae, inv_inicial, method='Nelder-Mead', bounds=[(0.1, 50), (0.1, 20)])
+
+Kp_final, Ti_final = resultado.x
+print(f"\n--- Sintonización Completada ---")
+print(f"Kp óptimo: {Kp_final:.4f} L/h·°C")
+print(f"Ti óptimo: {Ti_final:.4f} h")
+print(f"IAE Mínimo: {resultado.fun:.4f}")
+
+# %%
+'''Cultivo continuo biorreactor 20L HCW con D, S_in y controlador PI optimizados'''
+
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.integrate import solve_ivp
+
+def continuo_jacket(t, Y):
+    X, S, P, Tr, Tj, I = Y
+
+    X_calc = max(0, X)
+    S_calc = max(0, S)
+    P_calc = max(0, P)
+
+    #Tasa especifica de crecimiento
+    miu = (miu_max * S_calc * Kix * np.exp(-P_calc/Kpx))/((Ksx + S_calc)*(Kix + S_calc))
+    qs = (qs_max * S_calc * Kis * np.exp(-P_calc/Kps))/((Kss + S_calc)*(Kis + S_calc))
+    qp = (qp_max * S_calc * Kip * np.exp(-P_calc/Kpp))/((Ksp + S_calc)*(Kip + S_calc))
+
+    rQ = Yqs * qs * X_calc
+
+    D = F_feed / V_reactor #Tasa de dilucion [h^-1]
+
+    #Controlador PI del flujo de refrigerante en la chaqueta
+    Error = Tr - T_setpoint
+    Fc_control = F0 + Kp * Error + (Kp/Ti) * I
+    Fc = np.clip(Fc_control, F_min, F_max)
+
+    #Anti-windup
+    if (Fc_control > F_max and Error > 0) or (Fc_control < F_min and Error < 0):
+        dI = 0
+    else:
+        dI = Error
+
+    #Balances de masa (membrana ideal: retencion biomasa = 1, retencion producto = 0)
+    dX = (miu - Kd) * X_calc
+    dS = D * (S_in - S_calc) - qs * X_calc
+    dP = alpha * (miu - Kd) * X_calc + qp * X_calc - D * P_calc
+
+    #Balance de energia
+    dTr = D * (T_feed - Tr) + (rQ / (rho * Cp)) - (UA * (Tr - Tj)) / (rho * V_reactor * Cp)
+    dTj = (Fc/V_jacket) * (Tj_entrada - Tj) + (UA * (Tr - Tj)) / (rho * V_jacket * Cp)
+    return [dX, dS, dP, dTr, dTj, dI]
+
+##Parametros
+V_reactor = 20 #[L]
+S_in = 64.4440 #[g/L] optimizado
+D_op = 1.0800 #[h^-1] optimizado
+F_feed = D_op * V_reactor #[L/h]
+T_feed = 25 #[°C]
+Kd = 0.0001
+miu_max = 1.09
+qs_max = 4.16
+qp_max = 1.863
+alpha = 0.017
+
+Ksx = 4.229; Kss = 0.15; Ksp = 0.065
+Kix = 394.20; Kis = 143.391; Kip = 373.89
+Kpx = 5.001; Kps = 20.07; Kpp = 42.83
+
+rho = 1000
+Cp = 4.182
+
+V_jacket = 2
+Tj_entrada = 5
+UA = 75 * 3600
+
+Yps = 0.72
+Yxs = 0.074
+Ypx = Yps/Yxs
+Yqs = 3963
+
+#Parametros del controlador PI ya sintonizados en la seccion anterior
+T_setpoint = 30
+Kp = 50
+Ti = 0.1000
+F0 = 5
+F_min = 0
+F_max = 20
+
+#Condiciones iniciales
+X0 = 0.43
+S0 = 33
+P0 = 0
+Tr0 = 30
+Tj0 = 29
+I0 = 0
+array_iniciales = np.array([X0, S0, P0, Tr0, Tj0, I0])
+
+#Tiempo de ejecucion (se simula lo suficiente para alcanzar el estado estacionario)
+t_start = 0
+t_stop = 100
+tspan = (t_start, t_stop)
+t_array = np.linspace(t_start, t_stop, num=5000)
+
+#Metodo numerico
+solucion = solve_ivp(continuo_jacket, tspan, array_iniciales, t_eval=t_array, method='LSODA')
+
+Tiempo = solucion.t
+Biomasa = solucion.y[0]
+Sustrato = solucion.y[1]
+Producto = solucion.y[2]
+T_reactor = solucion.y[3]
+T_jacket = solucion.y[4]
+Integral_error = solucion.y[5]
+Volumen = np.ones_like(Tiempo) * V_reactor
+
+Error = T_reactor - T_setpoint
+F_valor = F0 + Kp * Error + (Kp/Ti) * Integral_error
+Fc = np.clip(F_valor, F_min, F_max)
+
+# CALCULOS ADICIONALES (estado estacionario, ultimo punto de la simulacion)
+conversion = (S_in - Sustrato[-1]) / S_in
+
+Pv = D_op * Producto[-1] #Productividad volumetrica en estado estacionario [g/L*h]
+
+Yps_real = Producto[-1] / (S_in - Sustrato[-1]) if (S_in - Sustrato[-1]) > 0 else np.nan
+Yxs_real = Biomasa[-1] / (S_in - Sustrato[-1]) if (S_in - Sustrato[-1]) > 0 else np.nan
+
+Q_total = np.trapezoid(UA * (T_reactor - T_jacket), Tiempo) #Energia total removida por la chaqueta [J]
+Q_ss = UA * (T_reactor[-1] - T_jacket[-1]) #Tasa de remocion de calor en estado estacionario [J/h]
+
+# RESULTADOS DE OPERACION
+print("\n" + "="*60)
+print("          RESULTADOS DE LA SIMULACIÓN (CONTINUO)")
+print("="*60)
+
+print("\n--- Operación del reactor ---")
+print(f"Volumen del reactor              : {V_reactor:.2f} L (constante)")
+print(f"Tasa de dilución óptima (D)      : {D_op:.4f} h⁻¹")
+print(f"Sustrato en la alimentación (Sin): {S_in:.4f} g/L")
+print(f"Tiempo total de simulación       : {Tiempo[-1]:.2f} h")
+
+print("\n--- Resultados biológicos (estado estacionario) ---")
+print(f"Biomasa final                   : {Biomasa[-1]:.3f} g/L")
+print(f"Sustrato final                   : {Sustrato[-1]:.3f} g/L")
+print(f"Conversión de sustrato           : {conversion*100:.2f} %")
+print(f"Producto final                  : {Producto[-1]:.3f} g/L")
+
+print("\n--- Indicadores de desempeño ---")
+print(f"Productividad volumétrica (SS)  : {Pv:.3f} g/L·h")
+print(f"Rendimiento Yps real             : {Yps_real:.3f} g/g")
+print(f"Rendimiento Yxs real             : {Yxs_real:.3f} g/g")
+
+print("\n--- Desempeño térmico ---")
+print(f"Temperatura mínima reactor       : {T_reactor.min():.2f} °C")
+print(f"Temperatura máxima reactor       : {T_reactor.max():.2f} °C")
+print(f"Energía total removida (chaqueta): {Q_total:.2f} J")
+print(f"Tasa de remoción en SS           : {Q_ss:.2f} J/h")
+print(f"Tiempo con Fc saturado           : {np.mean(F_valor >= F_max)*100:.2f} %")
+
+print("\n--- Parámetros del controlador PI ---")
+print(f"Kp                              : {Kp:.2f} L/h·°C")
+print(f"Ti                              : {Ti:.2f} h")
+print(f"Set point                       : {T_setpoint:.2f} °C")
+print(f"Caudal nominal                  : {F0:.2f} L/h")
+print(f"Caudal máximo                   : {F_max:.2f} L/h")
+print("="*60)
+
+#Grafica
+f1, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(11, 7))
+ax1.plot(Tiempo, Biomasa, label='Biomasa', color='red')
+ax1.plot(Tiempo, Sustrato, label='Sustrato', color='blue')
+ax1.plot(Tiempo, Producto, label='Producto (lactato)', color='green')
+ax1.set_xlabel('Tiempo [h]'); ax1.set_ylabel('Concentracion [g/L]')
+
+ax2.plot(Tiempo, T_reactor, label='Temperatura reactor', color='orange')
+ax2.plot(Tiempo, T_jacket, label='Temperatura chaqueta', color='purple')
+ax2.axhline(T_setpoint, color='darkred', linestyle='--', label='Set point')
+ax2.set_xlabel('Tiempo [h]'); ax2.set_ylabel('Temperatura [°C]')
+
+ax3.plot(Tiempo, Error, label='Error', color='gold')
+ax3.set_xlabel('Tiempo [h]'); ax3.set_ylabel('Error [°C]')
+
+ax4.plot(Tiempo, Fc, label='Flujo refrigerante real', color='magenta')
+ax4.plot(Tiempo, Volumen, label='Volumen reactor', color='teal')
+ax4.set_xlabel('Tiempo [h]')
+
+for i in [ax1, ax2, ax3, ax4]:
+    i.grid()
+    i.legend()
+
+plt.tight_layout()
+plt.show()

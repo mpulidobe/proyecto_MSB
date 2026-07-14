@@ -205,7 +205,7 @@ Cp = 4.182 #Capacidad calorifica del medio [J/g*°C]
 
 #Chaqueta de enfriamiento
 V_jacket = 2 #Volumen de la chaqueta [L]
-Tj_entrada = 10 #[°C]
+Tj_entrada = 15 #[°C]
 UA = 75 * 3600 #[J/h*°C]
 
 #Rendimientos (Ypx, Yps, Yxs)
@@ -218,7 +218,7 @@ Yqs = 3963 #Rendimiento termico [J/g]
 T_setpoint = 30 #[°C]
 Kp = 9.59 #[L/h*°C]
 Ti = 3.66 #[h]
-F0 = 5 #[L/h]
+F0 = 1 #[L/h]
 F_min = 0 #[L/h]
 F_max = 10 #[L/h]
 
@@ -229,8 +229,8 @@ P0 = 0 #[g/L]
 Tr0 = 30 #[°C]
 Tj0 = 25 #[°C]
 I0 = 0 #[°C*h]
-P_acumulado0 = 0 #[g/L]
-array_iniciales = np.array([X0, S0, P0, Tr0, Tj0, I0, P_acumulado0])
+Pac0 = 0 #[g/L]
+array_iniciales = np.array([X0, S0, P0, Tr0, Tj0, I0, Pac0])
 
 #Tiempo de ejecucion
 t_start = 0
@@ -242,7 +242,7 @@ def objective (x):
     S_in, F_feed = x
     
     def continuo_jacket(t, Y):
-        X, S, P, Tr, Tj, I, P_acumulado = Y
+        X, S, P, Tr, Tj, I, Pac = Y
         
         X_calc = max(0, X)
         S_calc = max(0, S)
@@ -258,31 +258,33 @@ def objective (x):
         
         #Cambio del modo de operacion
         if t < 5:
-            D = 0
+            F=0 #batch
         else:
-            D = F_feed/V_reactor
-        
+            F=F_feed #caucal constante de operacion continua
+        D=F/V_reactor #Dilución
+
         #Controlador
         Error = Tr - T_setpoint
-        F_control = F0 + Kp * Error + (Kp/Ti) * I
-        F = np.clip(F_control, F_min, F_max)
+        Fc_control = F0 + Kp * Error + (Kp/Ti) * I
+        Fc = np.clip(Fc_control, F_min, F_max)
         
         #Evitar windup
-        if F_control > F_max and Error > 0:
+        if Fc_control > F_max and Error > 0:
             dI = 0
-        elif F_control < F_min and Error < 0:
+        elif Fc_control < F_min and Error < 0:
             dI = 0
         else:
             dI = Error
             
-        #Ecuaciones diferenciales de las variables de estado
+        #Balances de masa
         dX = (miu - Kd)* X_calc #Porque se tienen membrana ideal
         dS = D* (S_in - S_calc) - qs * X_calc
         dP = alpha * dX + qp * X_calc - D * P_calc
+        #Balances de energia
         dTr = D * (T_feed - Tr) + (rQ / (rho * Cp)) - (UA * (Tr - Tj)) / (rho * V_reactor * Cp)
-        dTj = (F/V_jacket) * (Tj_entrada - Tj) + (UA * (Tr - Tj)) / (rho * V_jacket * Cp)
-        dP_acumulado = D * V_reactor * P_calc
-        return [dX, dS, dP, dTr, dTj, dI, dP_acumulado]
+        dTj = (Fc/V_jacket) * (Tj_entrada - Tj) + (UA * (Tr - Tj)) / (rho * V_jacket * Cp)
+        dPac = D * V_reactor * P_calc
+        return [dX, dS, dP, dTr, dTj, dI, dPac]
 
 
     #Metodo numerico
@@ -312,7 +314,7 @@ def objective (x):
     return -PROD_global
 
 print("Optimizando Sfeed y F_feed...")
-bounds = [(10, 100), (0.1, 1.0)]
+bounds = [(10, 200), (0.1, 1.0)]
 result = shgo(objective, bounds=bounds)
 Sfeed_opt, F_feed_opt = result.x
 prod_max = -result.fun
