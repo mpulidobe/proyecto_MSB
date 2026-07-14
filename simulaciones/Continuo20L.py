@@ -203,9 +203,9 @@ def objective (x):
             
         #Ecuaciones diferenciales de las variables de estado
         dX = (miu - Kd)* X_calc #Porque se tienen membrana ideal
-        dS = (F_feed/V_reactor) * (S_in - S_calc) - qs * X_calc
-        dP = alpha * dX + qp * X_calc - (F_feed/V_reactor) * P_calc
-        dTr = (F_feed/V_reactor) * (T_feed - Tr) + (rQ / (rho * Cp)) - (UA * (Tr - Tj)) / (rho * V_reactor * Cp)
+        dS = D* (S_in - S_calc) - qs * X_calc
+        dP = alpha * dX + qp * X_calc - D * P_calc
+        dTr = D * (T_feed - Tr) + (rQ / (rho * Cp)) - (UA * (Tr - Tj)) / (rho * V_reactor * Cp)
         dTj = (F/V_jacket) * (Tj_entrada - Tj) + (UA * (Tr - Tj)) / (rho * V_jacket * Cp)
         dP_acumulado = F_feed * P_calc
         return [dX, dS, dP, dTr, dTj, dI, dP_acumulado]
@@ -399,7 +399,7 @@ print(f"Kp óptimo: {Kp_final:.4f} L/h·°C")
 print(f"Ti óptimo: {Ti_final:.4f} h")
 print(f"IAE Mínimo: {resultado.fun:.4f}")
 #%%
-'''Cultivo fedbatch biorreactor 20L HCW con sfeed y ffeed optimizado'''
+'''Cultivo continuo biorreactor 20L HCW con sfeed y ffeed optimizado'''
 
 import numpy as np
 import matplotlib.pyplot as plt
