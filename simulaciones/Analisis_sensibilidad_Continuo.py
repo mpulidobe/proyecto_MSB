@@ -10,7 +10,7 @@ try:
 except ImportError:
     from scipy.integrate import trapz as trapezoid
 
-def continuo_jacket(t, Y, miu_max):
+def continuo_jacket(t, Y, miu_max, qp_max, Kix, Kip):
     X, S, P, Tr, Tj, I, P_acumulado = Y
 
     X_calc = max(0, X)
@@ -113,7 +113,7 @@ tspan = (t_start, t_stop)
 t_array = np.linspace(t_start, t_stop, num=1000)
 
 #Metodo numerico
-solucion = solve_ivp(continuo_jacket, tspan, array_iniciales, t_eval=t_array, args = (miu_max, ), method='LSODA')
+solucion = solve_ivp(continuo_jacket, tspan, array_iniciales, t_eval=t_array, args = (miu_max, qp_max, Kix, Kip), method='LSODA')
 
 Tiempo = solucion.t
 Biomasa = solucion.y[0]
@@ -129,64 +129,176 @@ Error = T_reactor - T_setpoint
 F_valor = F0 + Kp * Error + (Kp/Ti) * Integral_error
 F = np.clip(F_valor, F_min, F_max)
 miu_max_base = miu_max
+qp_max_base = qp_max
+Kix_base = Kix
+Kip_base = Kip
 
 # Graficas
-f1, ax1 = plt.subplots(figsize=(8,5))
-line1, = ax1.plot(Tiempo, Biomasa, label='Biomasa', color='red')
-line2, = ax1.plot(Tiempo, Sustrato, label='Sustrato', color='blue')
-line3, = ax1.plot(Tiempo, Producto, label='Producto (lactato)', color='green')
+f1, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(14, 8))
+line1_miu, = ax1.plot(Tiempo, Biomasa, label='Biomasa', color='red')
+line2_miu, = ax1.plot(Tiempo, Sustrato, label='Sustrato', color='blue')
+line3_miu, = ax1.plot(Tiempo, Producto, label='Producto (lactato)', color='green')
 ax1.set_xlabel('Tiempo [h]'); ax1.set_ylabel('Concentracion [g/L]')
-ax1.grid()
-ax1.legend()
 
-plt.subplots_adjust(left=0.28)
+line1_qp, = ax2.plot(Tiempo, Biomasa, label='Biomasa', color='red')
+line2_qp, = ax2.plot(Tiempo, Sustrato, label='Sustrato', color='blue')
+line3_qp, = ax2.plot(Tiempo, Producto, label='Producto (lactato)', color='green')
+ax2.set_xlabel('Tiempo [h]'); ax1.set_ylabel('Concentracion [g/L]')
+
+line1_Kix, = ax3.plot(Tiempo, Biomasa, label='Biomasa', color='red')
+line2_Kix, = ax3.plot(Tiempo, Sustrato, label='Sustrato', color='blue')
+line3_Kix, = ax3.plot(Tiempo, Producto, label='Producto (lactato)', color='green')
+ax3.set_xlabel('Tiempo [h]'); ax1.set_ylabel('Concentracion [g/L]')
+
+line1_Kip, = ax4.plot(Tiempo, Biomasa, label='Biomasa', color='red')
+line2_Kip, = ax4.plot(Tiempo, Sustrato, label='Sustrato', color='blue')
+line3_Kip, = ax4.plot(Tiempo, Producto, label='Producto (lactato)', color='green')
+ax4.set_xlabel('Tiempo [h]'); ax1.set_ylabel('Concentracion [g/L]')
+
+for i in [ax1, ax2, ax3, ax4]:
+    i.grid()
+    i.legend()
+
+plt.subplots_adjust(left=0.32, right=0.98, bottom=0.12, top=0.95, wspace=0.30, hspace=0.30)
 
 axcolor = "lightgoldenrodyellow"
 
-ax_mu = plt.axes([0.05, 0.55, 0.16, 0.03],
-                 facecolor=axcolor)
+ax_miu  = plt.axes([0.05,0.78,0.20,0.03], facecolor=axcolor)
+ax_qp  = plt.axes([0.05,0.66,0.20,0.03], facecolor=axcolor)
+ax_Kix = plt.axes([0.05,0.54,0.20,0.03], facecolor=axcolor)
+ax_Kip = plt.axes([0.05,0.42,0.20,0.03], facecolor=axcolor)
 
-s_mu = Slider(
-    ax=ax_mu,
+s_miu = Slider(
+    ax=ax_miu,
     label=r'$\mu_{max}$',
     valmin=0.8*miu_max_base,
     valmax=1.2*miu_max_base,
     valinit=miu_max_base,
-    valfmt='%1.3f'
-)
+    valfmt='%1.3f')
 
-def update(val):
+s_qp = Slider(
+    ax=ax_qp,
+    label=r'$q_{p,max}$',
+    valmin=0.8*qp_max_base,
+    valmax=1.2*qp_max_base,
+    valinit=qp_max_base,
+    valfmt='%1.3f')
 
-    mu = s_mu.val
+s_Kix = Slider(
+    ax=ax_Kix,
+    label=r'$K_{ix}$',
+    valmin=0.8*Kix_base,
+    valmax=1.2*Kix_base,
+    valinit=Kix_base,
+    valfmt='%1.3f')
+
+s_Kip = Slider(
+    ax=ax_Kip,
+    label=r'$K_{ip}$',
+    valmin=0.8*Kip_base,
+    valmax=1.2*Kip_base,
+    valinit=Kip_base,
+    valfmt='%1.3f')
+
+def update_miu(val):
+
+    miu = s_miu.val
 
     sol = solve_ivp(
         continuo_jacket,
         tspan,
         array_iniciales,
         t_eval=t_array,
-        args=(mu,),
-        method='LSODA'
+        args=(miu, qp_max_base, Kix_base, Kip_base),
+        method="LSODA"
     )
 
-    line1.set_ydata(sol.y[0])
-    line2.set_ydata(sol.y[1])
-    line3.set_ydata(sol.y[2])
+    line1_miu.set_ydata(sol.y[0])
+    line2_miu.set_ydata(sol.y[1])
+    line3_miu.set_ydata(sol.y[2])
 
     ax1.relim()
     ax1.autoscale_view()
+    f1.canvas.draw_idle()
+    
+def update_qp(val):
 
+    qp = s_qp.val
+
+    sol = solve_ivp(
+        continuo_jacket,
+        tspan,
+        array_iniciales,
+        t_eval=t_array,
+        args=(miu_max_base, qp, Kix_base, Kip_base),
+        method="LSODA"
+    )
+
+    line1_qp.set_ydata(sol.y[0])
+    line2_qp.set_ydata(sol.y[1])
+    line3_qp.set_ydata(sol.y[2])
+
+    ax1.relim()
+    ax1.autoscale_view()
     f1.canvas.draw_idle()
 
-s_mu.on_changed(update)
+def update_Kix(val):
 
-resetax = plt.axes([0.08,0.42,0.12,0.05])
+    Kix = s_Kix.val
 
-button = Button(resetax,
-                'Reset',
-                color='lightcoral')
+    sol = solve_ivp(
+        continuo_jacket,
+        tspan,
+        array_iniciales,
+        t_eval=t_array,
+        args=(miu_max_base, qp_max_base, Kix, Kip_base),
+        method="LSODA"
+    )
+
+    line1_Kix.set_ydata(sol.y[0])
+    line2_Kix.set_ydata(sol.y[1])
+    line3_Kix.set_ydata(sol.y[2])
+
+    ax1.relim()
+    ax1.autoscale_view()
+    f1.canvas.draw_idle()
+
+def update_Kip(val):
+
+    Kip = s_Kip.val
+
+    sol = solve_ivp(
+        continuo_jacket,
+        tspan,
+        array_iniciales,
+        t_eval=t_array,
+        args=(miu_max_base, qp_max_base, Kix_base, Kip),
+        method="LSODA"
+    )
+
+    line1_Kip.set_ydata(sol.y[0])
+    line2_Kip.set_ydata(sol.y[1])
+    line3_Kip.set_ydata(sol.y[2])
+
+    ax1.relim()
+    ax1.autoscale_view()
+    f1.canvas.draw_idle()
+    
+s_miu.on_changed(update_miu)
+s_qp.on_changed(update_qp)
+s_Kix.on_changed(update_Kix)
+s_Kip.on_changed(update_Kip)
+
+resetax = plt.axes([0.08,0.28,0.12,0.05])
+
+button = Button(resetax, "Reset")
 
 def reset(event):
-    s_mu.reset()
+    s_miu.reset()
+    s_qp.reset()
+    s_Kix.reset()
+    s_Kip.reset()
 
 button.on_clicked(reset)
+
 plt.show()
