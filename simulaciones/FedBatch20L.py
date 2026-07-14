@@ -313,6 +313,7 @@ def objective (x):
     t_final = Tiempo[i_opt]
     P_final = Producto[i_opt]
     V_final = Volumen[i_opt]
+    
     # Productividad Global (Qp) en g/(L·h) 
     # Nota: Se usa la concentración final porque el volumen es el del sistema completo
     if t_final > 0:
@@ -560,11 +561,11 @@ Error = T_reactor - T_setpoint
 F_valor = F0 + Kp * Error + (Kp/Ti) * Integral_error
 F = np.clip(F_valor, F_min, F_max)
 
-#--- Resumen numerico util para el informe ---
+#Resumen numerico
 t_fin_alimentacion = Tiempo[Volumen >= V_max]
 t_fin_alimentacion = t_fin_alimentacion[0] if len(t_fin_alimentacion) > 0 else None
 
-# CÁLCULOS ADICIONALES
+#CÁLCULOS ADICIONALES
 
 conversion = (S0 + (S_in * (Volumen[-1] - V0)) / Volumen[-1] - Sustrato[-1]) / \
              (S0 + (S_in * (Volumen[-1] - V0)) / Volumen[-1])
@@ -579,8 +580,7 @@ Pv = producto_total / (Volumen[-1] * Tiempo[-1])
 
 Q = np.trapezoid(UA * (T_reactor - T_jacket), Tiempo)
 
-# RESULTADOS DE OPERACIÓN
-
+# Resultados de operacion
 print("\n" + "="*60)
 print("          RESULTADOS DE LA SIMULACIÓN")
 print("="*60)
@@ -596,8 +596,7 @@ else:
 
 print(f"Tiempo total de simulación      : {Tiempo[-1]:.2f} h")
 
-# BIOMASA, SUSTRATO Y PRODUCTO
-
+#BIOMASA, SUSTRATO Y PRODUCTO
 print("\n--- Resultados biológicos ---")
 print(f"Biomasa final                   : {Biomasa[-1]:.3f} g/L")
 print(f"Biomasa máxima                  : {Biomasa.max():.3f} g/L")
@@ -612,16 +611,14 @@ print(f"Producto total                  : {producto_total:.2f} g")
 print(f"Biomasa total                   : {biomasa_total:.2f} g")
 print(f"Sustrato alimentado             : {substrato_alimentado:.2f} g")
 
-# RENDIMIENTOS
-
+#RENDIMIENTOS
 print("\n--- Indicadores de desempeño ---")
 print(f"Productividad volumétrica       : {Pv:.3f} g/L·h")
 print(f"Rendimiento Yps real            : {Yps_real:.3f} g/g")
 print(f"Rendimiento Yxs real            : {Yxs_real:.3f} g/g")
 
 
-# CONTROL DE TEMPERATURA
-
+#CONTROL DE TEMPERATURA
 print("\n--- Desempeño térmico ---")
 print(f"Temperatura mínima reactor      : {T_reactor.min():.2f} °C")
 print(f"Temperatura máxima reactor      : {T_reactor.max():.2f} °C")
@@ -634,7 +631,7 @@ print(f"Set point                      : {T_setpoint:.2f} °C")
 print(f"Caudal nominal                 : {F0:.2f} L/h")
 print(f"Caudal máximo                  : {F_max:.2f} L/h")
 
-#Grafica
+#Graficas
 f1, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(11, 7))
 ax1.plot(Tiempo, Biomasa, label='Biomasa', color='red')
 ax1.plot(Tiempo, Sustrato, label='Sustrato', color='blue')

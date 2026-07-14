@@ -541,48 +541,38 @@ producto_reactor = Producto[-1] * V_reactor
 producto_cosechado = Producto_acumulado[-1]
 producto_total = producto_reactor + producto_cosechado
 
-# CORRECCIÓN DEL BUG: Definición de la variable biomasa_total
+#Definición de la variable biomasa_total
 biomasa_total = Biomasa[-1] * V_reactor
 
 # Cálculo de la productividad volumétrica global
 Pv = producto_total / (V_reactor * Tiempo[-1])
 
-# CORRECCIÓN: Integración de calor utilizando la función importada segura
 Q = trapezoid(UA * (T_reactor - T_jacket), Tiempo)
 
-# =============================================================================
-# RESULTADOS DE OPERACIÓN
-# =============================================================================
-
+#Resultados de operacion
 print("\n" + "="*60)
 print("          RESULTADOS DE LA SIMULACIÓN")
 print("="*60)
 
 print("\n--- Operación del reactor ---")
 
-# BIOMASA, SUSTRATO Y PRODUCTO
-
+#BIOMASA, SUSTRATO Y PRODUCTO
 print("\n--- Resultados biológicos ---")
 print(f"Biomasa final                   : {Biomasa[-1]:.3f} g/L")
 print(f"Biomasa máxima                  : {Biomasa.max():.3f} g/L")
 print(f"Tiempo biomasa máxima           : {Tiempo[np.argmax(Biomasa)]:.2f} h")
+print(f"Biomasa total                   : {biomasa_total:.2f} g")
 
 print(f"Sustrato final                  : {Sustrato[-1]:.3f} g/L")
 
 print(f"Producto final                  : {Producto[-1]:.3f} g/L")
 print(f"Producto total                  : {producto_total:.2f} g")
 
-# Ahora esta línea no fallará porque biomasa_total ya está definida
-print(f"Biomasa total                   : {biomasa_total:.2f} g")
-
-# Indicador de desempeño
-
+#PRODUCTIVIDAD
 print("\n--- Indicadores de desempeño ---")
 print(f"Productividad volumétrica       : {Pv:.3f} g/L·h")
 
-
-# CONTROL DE TEMPERATURA
-
+#CONTROL DE TEMPERATURA
 print("\n--- Desempeño térmico ---")
 print(f"Temperatura mínima reactor      : {T_reactor.min():.2f} °C")
 print(f"Temperatura máxima reactor      : {T_reactor.max():.2f} °C")
@@ -595,7 +585,7 @@ print(f"Set point                      : {T_setpoint:.2f} °C")
 print(f"Caudal nominal                 : {F0:.2f} L/h")
 print(f"Caudal máximo                  : {F_max:.2f} L/h")
 
-# Grafica
+# Graficas
 f1, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(11, 7))
 ax1.plot(Tiempo, Biomasa, label='Biomasa', color='red')
 ax1.plot(Tiempo, Sustrato, label='Sustrato', color='blue')
