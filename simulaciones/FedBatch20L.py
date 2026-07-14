@@ -20,7 +20,7 @@ def fedbatch_jacket(t, Y):
     #Tasa volumetrica de generacion de energia metabolica
     rQ = Yqs * qs * X_calc
 
-    #--- Alimentacion
+    #Alimentacion
     if t < 5 :
         F=0 #Fase Inicial Bacth
         dV=0
@@ -28,7 +28,8 @@ def fedbatch_jacket(t, Y):
         F=F_feed if V_calc < 20 else 0 #Inicio fase fed-bacth
         dV=F
         
-    D=F/V_calc #Tasa de dilución    
+    D=F/V_calc #Tasa de dilución   
+    
     #Balances de Masa 
     dX = (miu - Kd) * X_calc - D * X_calc
     dS = D * (S_in - S_calc) - qs * X_calc
@@ -51,16 +52,16 @@ def fedbatch_jacket(t, Y):
     return [dX, dS, dP, dTr, dTj, dI, dV]
 
 ##Parametros
-V0 = 1.5          #[L] volumen inicial de caldo en el reactor 
-V_max = 20        #[L] volumen maximo de operacion del reactor 
-S_in = 10 #[g/L]
-F_feed = 1 #[L/h]
-T_feed = 25 #[°C] temperatura de la corriente de alimentacion 
-Kd = 0.0001 #coeficiente de muerte celular [h^-1]
-miu_max = 1.09 #tasa de crecimiento especifica maxima [h^-1]
-qs_max = 4.16 #tasa de utilizacion de sustrato especifica maxima [g/g*h]
-qp_max = 1.863 #tasa de produccion de lactato especifica maxima [g/g*h]
-alpha = 0.017 #constante asociada al crecimiento en Luedeking-Piret [g/g]
+V0 = 1.5 #Volumen inicial de caldo en el reactor [L]
+V_max = 20 #Volumen maximo de operacion del reactor [L]
+S_in = 10 #Concentracion de sustrato en la corriente de alimentacion [g/L]
+F_feed = 1 #Caudal de alimentacion [L/h]
+T_feed = 25 #Temperatura de la corriente de alimentacion [°C]
+Kd = 0.0001 #Coeficiente de muerte celular [h^-1]
+miu_max = 1.09 #Tasa de crecimiento especifica maxima [h^-1]
+qs_max = 4.16 #Tasa de utilizacion de sustrato especifica maxima [g/g*h]
+qp_max = 1.863 #Tasa de produccion de lactato especifica maxima [g/g*h]
+alpha = 0.017 #Constante asociada al crecimiento en Luedeking-Piret [g/g]
 
 
 #Constantes de limitacion de sustrato
@@ -84,7 +85,7 @@ Cp = 4.182 #Capacidad calorifica del medio [J/g*°C]
 
 #Chaqueta de enfriamiento
 V_jacket = 2 #Volumen de la chaqueta [L]
-Tj_entrada = 10 #[°C]
+Tj_entrada = 10 #Temperatura de entrada a la chaqueta[°C]
 UA = 75 * 3600 #[J/h*°C]
 
 #Rendimientos
@@ -105,7 +106,7 @@ F_max = 10 #[L/h]
 X0 = 0.43 #[g/L]
 S0 = 33 #[g/L]
 P0 = 0 #[g/L]
-Tr0 = 30#[°C]
+Tr0 = 30 #[°C]
 Tj0 = 25 #[°C]
 I0 = 0 #[°C*h]
 array_iniciales = np.array([X0, S0, P0, Tr0, Tj0, I0, V0])
@@ -230,9 +231,9 @@ def objective (x):
         return [dX, dS, dP, dTr, dTj, dI, dV]
     
     ##Parametros
-    V0 = 1.5          #[L] volumen inicial de caldo en el reactor 
-    V_max = 20        #[L] volumen maximo de operacion del reactor 
-    S_in = x[0] #[g/L]
+    V0 = 1.5 #[L] volumen inicial de caldo en el reactor 
+    V_max = 20 #[L] volumen maximo de operacion del reactor 
+    S_in = x[0] #Concentracion de sustrato en la corriente de alimentacion [g/L]
     F_feed = 1 #[L/h]
     T_feed = 25 #[°C] temperatura de la corriente de alimentacion 
     Kd = 0.0001 #coeficiente de muerte celular [h^-1]
@@ -327,13 +328,13 @@ print(f"  Sfeed óptimo  : {Sfeed_opt:.4f} g/L")
 print(f"  Productividad máxima: {prod_max:.6f} g/(L·h)")
 print(f"{'='*45}\n")
 # %%
-'''Cultivo fedbatch biorreactor 20L HCW,sintonizacion del controlador '''
+'''Cultivo fedbatch biorreactor 20L HCW sintonizacion del controlador '''
 import numpy as np
 from scipy.integrate import solve_ivp
 from scipy.optimize import minimize
 import matplotlib.pyplot as plt
 
-# 1. Parámetros del sistema 
+# Parámetros del sistema 
 V0, V_max = 1.5, 20
 S_in, F_feed, T_feed = 55.47, 1.0, 25.0
 T_setpoint = 30.0
@@ -348,7 +349,7 @@ Kss, Kis, Kps = 0.15, 143.391, 20.07
 Ksp, Kip, Kpp = 0.065, 373.89, 42.83
 alpha, Kd = 0.017, 0.0001
 
-# 2. Modelo dinámico para la simulación
+# Modelo dinámico para la simulación
 def modelo_control(t, Y, Kp, Ti):
     X, S, P, Tr, Tj, I, V = Y
     X_c, S_c, P_c, V_c = max(0, X), max(0, S), max(0, P), max(1e-6, V)
@@ -379,7 +380,7 @@ def modelo_control(t, Y, Kp, Ti):
 
     return [dX, dS, dP, dTr, dTj, dI, dV]
 
-# 3. Función de costo: Minimización del IAE (Error Integral Absoluto) 
+# Función de costo: Minimización del IAE (Error Integral Absoluto) 
 def objetivo_iae(parametros):
 
     Kp_opt, Ti_opt = parametros
@@ -411,7 +412,7 @@ def objetivo_iae(parametros):
 
     return iae
 
-# 4. Ejecución de la sintonización
+# Ejecución de la sintonización
 print("Sintonizando controlador... Por favor espere.")
 inv_inicial = [9.59, 3.66] # Punto de partida literario [1]
 resultado = minimize(objetivo_iae, inv_inicial, method='Nelder-Mead', bounds=[(0.1, 50), (0.1, 20)])
@@ -445,7 +446,7 @@ def fedbatch_jacket(t, Y):
     #Tasa volumetrica de generacion de energia metabolica
     rQ = Yqs * qs * X_calc
 
-    #--- Alimentacion
+    #Alimentacion
     if t < 5 :
         F=0 #Fase Inicial Bacth
         dV=0
@@ -453,7 +454,8 @@ def fedbatch_jacket(t, Y):
         F=F_feed if V_calc < 20 else 0 #Inicio fase fed-bacth
         dV=F
         
-    D=F/V_calc #Tasa de dilución    
+    D=F/V_calc #Tasa de dilución 
+    
     #Balances de Masa 
     dX = (miu - Kd) * X_calc - D * X_calc
     dS = D * (S_in - S_calc) - qs * X_calc
