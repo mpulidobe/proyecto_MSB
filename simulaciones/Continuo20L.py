@@ -22,10 +22,8 @@ def continuo_jacket(t, Y):
     # Cambio de modo de operación
     if t < 5:
         D = 0          # Batch
-        F_feed_actual = 0
     else:
         D = F_feed / V_reactor
-        F_feed_actual = F_feed
     
     #Controlador
     Error = Tr - T_setpoint
@@ -42,9 +40,9 @@ def continuo_jacket(t, Y):
         
     #Ecuaciones diferenciales de las variables de estado
     dX = (miu - Kd)* X_calc #Porque se tienen membrana ideal
-    dS = (F_feed/V_reactor) * (S_in - S_calc) - qs * X_calc
-    dP = alpha * dX + qp * X_calc - (F_feed/V_reactor) * P_calc
-    dTr = (F_feed/V_reactor) * (T_feed - Tr) + (rQ / (rho * Cp)) - (UA * (Tr - Tj)) / (rho * V_reactor * Cp)
+    dS = D * (S_in - S_calc) - qs * X_calc
+    dP = alpha * dX + qp * X_calc - D * P_calc
+    dTr = D * (T_feed - Tr) + (rQ / (rho * Cp)) - (UA * (Tr - Tj)) / (rho * V_reactor * Cp)
     dTj = (F/V_jacket) * (Tj_entrada - Tj) + (UA * (Tr - Tj)) / (rho * V_jacket * Cp)
     return [dX, dS, dP, dTr, dTj, dI]
 
@@ -127,12 +125,13 @@ Volumen = np.ones_like(Tiempo) * V_reactor
 Error = T_reactor - T_setpoint
 F_valor = F0 + Kp * Error + (Kp/Ti)*Integral_error
 F = np.clip(F_valor, F_min, F_max)
+D_final = F_feed / V_reactor
 
 #Resumen numerico
 print(f"Biomasa final: {Biomasa[-1]:.3f} g/L (maxima: {Biomasa.max():.3f} g/L en t={Tiempo[np.argmax(Biomasa)]:.2f} h)")
 print(f"Sustrato final: {Sustrato[-1]:.3f} g/L")
 print(f"Producto (lactato) final: {Producto[-1]:.3f} g/L")
-print(f"Productividad volumétrica final: {(F_feed/V_reactor)*Producto[-1]:.3f} g/L·h")
+print(f"Productividad volumétrica final: {D_final*Producto[-1]:.3f} g/L·h")
 print(f"Temperatura del reactor: min={T_reactor.min():.2f} °C, max={T_reactor.max():.2f} °C")
 
 #Graficas
@@ -287,18 +286,11 @@ def objective (x):
     # Productividad Global Real g/(L·h)
     PROD_global = masa_total_producida / (V_reactor * t_stop)
     
-    return -PROD_global  # Maximizamos restando el negativo
+    return -PROD_global
 
-# --- EJECUCIÓN DE LA OPTIMIZACIÓN ---
-print("Optimizando Sfeed y F_feed concurrentemente...")
-
-# Límites de búsqueda: 
-# Sfeed de 10 a 300 g/L 
-# F_feed de 0.1 a 5.0 L/h (para no lavar el reactor drásticamente)
+print("Optimizando Sfeed y F_feed...")
 bounds = [(10, 300), (0.1, 5.0)]
-
 result = shgo(objective, bounds=bounds)
-
 Sfeed_opt, F_feed_opt = result.x
 prod_max = -result.fun
 
@@ -307,3 +299,5 @@ print(f"  Sfeed óptimo          : {Sfeed_opt:.4f} g/L")
 print(f"  F_feed óptimo         : {F_feed_opt:.4f} L/h")
 print(f"  Productividad máxima  : {prod_max:.6f} g/(L·h)")
 print(f"{'='*45}\n")
+#%%
+'''Cultivo continuo con recirculacion de biomasa biorreactor 20L HCW - sintonizacion del controlador'''

@@ -324,6 +324,7 @@ print("Optimizando Sfeed...")
 result = shgo(objective, bounds=[(0, 500)])
 Sfeed_opt = result.x[0]
 prod_max   = -result.fun
+
 print(f"\n{'='*45}")
 print(f"  Sfeed óptimo  : {Sfeed_opt:.4f} g/L")
 print(f"  Productividad máxima: {prod_max:.6f} g/(L·h)")
