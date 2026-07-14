@@ -138,21 +138,25 @@ f1, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(14, 8))
 line1_miu, = ax1.plot(Tiempo, Biomasa, label='Biomasa', color='red')
 line2_miu, = ax1.plot(Tiempo, Sustrato, label='Sustrato', color='blue')
 line3_miu, = ax1.plot(Tiempo, Producto, label='Producto (lactato)', color='green')
+ax1.set_title(r'Sensibilidad local del parámetro $mu_{max}$', fontsize=12)
 ax1.set_xlabel('Tiempo [h]'); ax1.set_ylabel('Concentracion [g/L]')
 
 line1_qp, = ax2.plot(Tiempo, Biomasa, label='Biomasa', color='red')
 line2_qp, = ax2.plot(Tiempo, Sustrato, label='Sustrato', color='blue')
 line3_qp, = ax2.plot(Tiempo, Producto, label='Producto (lactato)', color='green')
+ax2.set_title(r'Sensibilidad local del parámetro $qp_{max}$', fontsize=12)
 ax2.set_xlabel('Tiempo [h]'); ax1.set_ylabel('Concentracion [g/L]')
 
 line1_Kix, = ax3.plot(Tiempo, Biomasa, label='Biomasa', color='red')
 line2_Kix, = ax3.plot(Tiempo, Sustrato, label='Sustrato', color='blue')
 line3_Kix, = ax3.plot(Tiempo, Producto, label='Producto (lactato)', color='green')
+ax3.set_title(r'Sensibilidad local del parámetro $K_{ix}$', fontsize=12)
 ax3.set_xlabel('Tiempo [h]'); ax1.set_ylabel('Concentracion [g/L]')
 
 line1_Kip, = ax4.plot(Tiempo, Biomasa, label='Biomasa', color='red')
 line2_Kip, = ax4.plot(Tiempo, Sustrato, label='Sustrato', color='blue')
 line3_Kip, = ax4.plot(Tiempo, Producto, label='Producto (lactato)', color='green')
+ax4.set_title(r'Sensibilidad local del parámetro $K_{ip}$', fontsize=12)
 ax4.set_xlabel('Tiempo [h]'); ax1.set_ylabel('Concentracion [g/L]')
 
 for i in [ax1, ax2, ax3, ax4]:
