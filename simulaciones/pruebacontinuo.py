@@ -18,9 +18,13 @@ def continuo_jacket(t, Y):
 
     #Tasa volumetrica de generacion de energia metabolica
     rQ = Yqs * qs * X_calc
-
+    #modo de operacion 
+    if t < 5:
+        F = 0  # Batch
+    else:
+        F = F_feed 
     #--- Dilucion (alimentacion continua, volumen de reactor constante)
-    D = F_feed / V_reactor #Tasa de dilucion [h^-1]
+    D = F / V_reactor #Tasa de dilucion [h^-1]
 
     #Controlador PI del flujo de refrigerante en la chaqueta
     Error = Tr - T_setpoint
@@ -103,7 +107,7 @@ array_iniciales = np.array([X0, S0, P0, Tr0, Tj0, I0])
 
 #Tiempo de ejecucion
 t_start = 0
-t_stop = 24
+t_stop = 100
 tspan = (t_start, t_stop)
 t_array = np.linspace(t_start, t_stop, num=10000)
 
@@ -182,7 +186,7 @@ def objective(x):
         qp = (qp_max * S_calc * Kip * np.exp(-P_calc/Kpp))/((Ksp + S_calc)*(Kip + S_calc))
 
         rQ = Yqs * qs * X_calc
-
+        
         D = D_x #Tasa de dilucion fija para esta evaluacion
 
         Error = Tr - T_setpoint
@@ -217,11 +221,11 @@ def objective(x):
     Kpx = 5.001; Kps = 20.07; Kpp = 42.83
 
     rho = 1000; Cp = 4.182
-    V_jacket = 2; Tj_entrada = 5; UA = 75 * 3600
+    V_jacket = 2; Tj_entrada = 2; UA = 75 * 3600
     Yqs = 3963
 
     T_setpoint = 30; Kp = 9.59; Ti = 3.66
-    F0 = 5; F_min = 0; F_max = 20
+    F0 = 0; F_min = 0; F_max = 20
 
     #Condiciones iniciales
     X0, S0, P0, Tr0, Tj0, I0 = 0.43, 33, 0, 30, 29, 0
@@ -268,13 +272,13 @@ import matplotlib.pyplot as plt
 # 1. Parametros del sistema (usa D y S_in optimizados en la seccion anterior)
 V_reactor = 20
 D_op = 1.08
-S_in = 64.4440
+S_in = 64.4209
 F_feed = D_op * V_reactor
 T_feed = 25.0
 T_setpoint = 30.0
 rho, Cp, Yqs = 1000.0, 4.182, 3963.0
-UA, V_jacket, Tj_entrada = 75*3600, 2.0, 5
-F0, F_min, F_max = 5, 0.0, 20.0
+UA, V_jacket, Tj_entrada = 75*3600, 2.0, 2
+F0, F_min, F_max = 0, 0.0, 20
 
 # Parametros cineticos
 miu_max, qs_max, qp_max = 1.09, 4.16, 1.863
@@ -292,8 +296,12 @@ def modelo_control(t, Y, Kp, Ti):
     qs = (qs_max * S_c * Kis) / ((Kss + S_c) * (Kis + S_c)) * np.exp(-P_c/Kps)
     qp = (qp_max * S_c * Kip) / ((Ksp + S_c) * (Kip + S_c)) * np.exp(-P_c/Kpp)
     rQ = Yqs * qs * X_c
-
-    D = F_feed / V_reactor
+    #modo de operacion 
+    if t < 5:
+        F = 0  # Batch
+    else:
+        F = F_feed 
+    D = F / V_reactor
 
     Error = Tr - T_setpoint
     Fc_control = F0 + Kp * Error + (Kp/Ti) * I
@@ -315,7 +323,7 @@ def objetivo_iae(parametros):
     if Kp_opt <= 0 or Ti_opt <= 0:
         return 1e10
 
-    y0 = [0.43, 33, 0, 30.5, 29, 0]
+    y0 = [0.43, 33, 0, 30, 29, 0]
     t_span = (0, 24)
     t_eval = np.linspace(0, 24, 200)
 
@@ -353,7 +361,7 @@ import matplotlib.pyplot as plt
 from scipy.integrate import solve_ivp
 
 def continuo_jacket(t, Y):
-    X, S, P, Tr, Tj, I = Y
+    X, S, P, Tr, Tj, I,Pac = Y
 
     X_calc = max(0, X)
     S_calc = max(0, S)
@@ -365,8 +373,12 @@ def continuo_jacket(t, Y):
     qp = (qp_max * S_calc * Kip * np.exp(-P_calc/Kpp))/((Ksp + S_calc)*(Kip + S_calc))
 
     rQ = Yqs * qs * X_calc
-
-    D = F_feed / V_reactor #Tasa de dilucion [h^-1]
+    #modo de operacion
+    if t < 5:
+        F = 0  # Batch
+    else:
+        F = F_feed 
+    D = F / V_reactor #Tasa de dilucion [h^-1]
 
     #Controlador PI del flujo de refrigerante en la chaqueta
     Error = Tr - T_setpoint
@@ -387,11 +399,12 @@ def continuo_jacket(t, Y):
     #Balance de energia
     dTr = D * (T_feed - Tr) + (rQ / (rho * Cp)) - (UA * (Tr - Tj)) / (rho * V_reactor * Cp)
     dTj = (Fc/V_jacket) * (Tj_entrada - Tj) + (UA * (Tr - Tj)) / (rho * V_jacket * Cp)
-    return [dX, dS, dP, dTr, dTj, dI]
+    dPac=F*P_calc
+    return [dX, dS, dP, dTr, dTj, dI,dPac]
 
 ##Parametros
 V_reactor = 20 #[L]
-S_in = 64.4440 #[g/L] optimizado
+S_in = 64.4209 #[g/L] optimizado
 D_op = 1.0800 #[h^-1] optimizado
 F_feed = D_op * V_reactor #[L/h]
 T_feed = 25 #[°C]
@@ -409,7 +422,7 @@ rho = 1000
 Cp = 4.182
 
 V_jacket = 2
-Tj_entrada = 5
+Tj_entrada = 2
 UA = 75 * 3600
 
 Yps = 0.72
@@ -421,7 +434,7 @@ Yqs = 3963
 T_setpoint = 30
 Kp = 50
 Ti = 0.1000
-F0 = 5
+F0 = 0
 F_min = 0
 F_max = 20
 
@@ -432,7 +445,8 @@ P0 = 0
 Tr0 = 30
 Tj0 = 29
 I0 = 0
-array_iniciales = np.array([X0, S0, P0, Tr0, Tj0, I0])
+Pac0=0.0
+array_iniciales = np.array([X0, S0, P0, Tr0, Tj0, I0,Pac0])
 
 #Tiempo de ejecucion (se simula lo suficiente para alcanzar el estado estacionario)
 t_start = 0
@@ -450,60 +464,111 @@ Producto = solucion.y[2]
 T_reactor = solucion.y[3]
 T_jacket = solucion.y[4]
 Integral_error = solucion.y[5]
+Producto_ac=solucion.y[6]
 Volumen = np.ones_like(Tiempo) * V_reactor
 
 Error = T_reactor - T_setpoint
 F_valor = F0 + Kp * Error + (Kp/Ti) * Integral_error
 Fc = np.clip(F_valor, F_min, F_max)
 
-# CALCULOS ADICIONALES (estado estacionario, ultimo punto de la simulacion)
-conversion = (S_in - Sustrato[-1]) / S_in
+# Cálculo de indicadores
 
-Pv = D_op * Producto[-1] #Productividad volumetrica en estado estacionario [g/L*h]
+# Biomasa y producto total
+biomasa_total = Biomasa[-1] * V_reactor
 
-Yps_real = Producto[-1] / (S_in - Sustrato[-1]) if (S_in - Sustrato[-1]) > 0 else np.nan
-Yxs_real = Biomasa[-1] / (S_in - Sustrato[-1]) if (S_in - Sustrato[-1]) > 0 else np.nan
+producto_cosechado = Producto_ac[-1]
+producto_reactor = Producto[-1] * V_reactor
+producto_total = producto_cosechado + producto_reactor
 
-Q_total = np.trapezoid(UA * (T_reactor - T_jacket), Tiempo) #Energia total removida por la chaqueta [J]
-Q_ss = UA * (T_reactor[-1] - T_jacket[-1]) #Tasa de remocion de calor en estado estacionario [J/h]
+# Sustrato
+tiempo_continuo = max(0, Tiempo[-1] - 5)     # operación continua después de 5 h
 
-# RESULTADOS DE OPERACION
+substrato_alimentado = S_in * F_feed * tiempo_continuo
+
+substrato_inicial = S0 * V_reactor
+substrato_final = Sustrato[-1] * V_reactor
+
+substrato_consumido = substrato_inicial + substrato_alimentado - substrato_final
+
+conversion = substrato_consumido / (substrato_inicial + substrato_alimentado)
+
+# Rendimientos
+Yps_real = producto_total / substrato_consumido
+Yxs_real = biomasa_total / substrato_consumido
+
+# Productividad global
+Pv = producto_total / (V_reactor * Tiempo[-1])
+Productividad_ac = np.zeros_like(Tiempo)
+
+Productividad_ac[1:] = (
+    Producto_ac[1:]
+    /(V_reactor*Tiempo[1:])
+)
+# Energía removida
+Q = np.trapz(UA * (T_reactor - T_jacket), Tiempo)
+
+# Dilución final
+D_final = F_feed / V_reactor
+
+# Resultados de operación
+
 print("\n" + "="*60)
-print("          RESULTADOS DE LA SIMULACIÓN (CONTINUO)")
+print("          RESULTADOS DE LA SIMULACIÓN")
 print("="*60)
 
 print("\n--- Operación del reactor ---")
-print(f"Volumen del reactor              : {V_reactor:.2f} L (constante)")
-print(f"Tasa de dilución óptima (D)      : {D_op:.4f} h⁻¹")
-print(f"Sustrato en la alimentación (Sin): {S_in:.4f} g/L")
-print(f"Tiempo total de simulación       : {Tiempo[-1]:.2f} h")
+print(f"Volumen del reactor            : {V_reactor:.2f} L")
+print(f"Caudal de alimentación         : {F_feed:.2f} L/h")
+print(f"Tasa de dilución (D)           : {D_final:.4f} h⁻¹")
+print(f"Sustrato de alimentación       : {S_in:.2f} g/L")
+print(f"Tiempo total de simulación     : {Tiempo[-1]:.2f} h")
 
-print("\n--- Resultados biológicos (estado estacionario) ---")
-print(f"Biomasa final                   : {Biomasa[-1]:.3f} g/L")
-print(f"Sustrato final                   : {Sustrato[-1]:.3f} g/L")
-print(f"Conversión de sustrato           : {conversion*100:.2f} %")
-print(f"Producto final                  : {Producto[-1]:.3f} g/L")
+# Biomasa, sustrato y producto
+
+print("\n--- Resultados biológicos ---")
+print(f"Biomasa final                 : {Biomasa[-1]:.3f} g/L")
+print(f"Biomasa máxima                : {Biomasa.max():.3f} g/L")
+print(f"Tiempo biomasa máxima         : {Tiempo[np.argmax(Biomasa)]:.2f} h")
+
+print(f"Sustrato final                : {Sustrato[-1]:.3f} g/L")
+print(f"Conversión de sustrato        : {conversion*100:.2f} %")
+
+print(f"Producto final                : {Producto[-1]:.3f} g/L")
+print(f"Producto cosechado            : {producto_cosechado:.2f} g")
+print(f"Producto en reactor           : {producto_reactor:.2f} g")
+print(f"Producto total                : {producto_total:.2f} g")
+
+print(f"Biomasa total                : {biomasa_total:.2f} g")
+print(f"Sustrato alimentado          : {substrato_alimentado:.2f} g")
+print(f"Sustrato consumido           : {substrato_consumido:.2f} g")
+
+# Indicadores de desempeño
 
 print("\n--- Indicadores de desempeño ---")
-print(f"Productividad volumétrica (SS)  : {Pv:.3f} g/L·h")
-print(f"Rendimiento Yps real             : {Yps_real:.3f} g/g")
-print(f"Rendimiento Yxs real             : {Yxs_real:.3f} g/g")
+print(f"Productividad global          : {Pv:.3f} g/L·h")
+print(f"Rendimiento Yps real          : {Yps_real:.3f} g/g")
+print(f"Rendimiento Yxs real          : {Yxs_real:.3f} g/g")
+
+# Desempeño térmico
 
 print("\n--- Desempeño térmico ---")
-print(f"Temperatura mínima reactor       : {T_reactor.min():.2f} °C")
-print(f"Temperatura máxima reactor       : {T_reactor.max():.2f} °C")
-print(f"Energía total removida (chaqueta): {Q_total:.2f} J")
-print(f"Tasa de remoción en SS           : {Q_ss:.2f} J/h")
-print(f"Tiempo con Fc saturado           : {np.mean(F_valor >= F_max)*100:.2f} %")
+print(f"Temperatura mínima reactor    : {T_reactor.min():.2f} °C")
+print(f"Temperatura máxima reactor    : {T_reactor.max():.2f} °C")
+print(f"Temperatura mínima chaqueta   : {T_jacket.min():.2f} °C")
+print(f"Temperatura máxima chaqueta   : {T_jacket.max():.2f} °C")
+print(f"Energía removida              : {Q:.2f} J")
+
+# Controlador PI
 
 print("\n--- Parámetros del controlador PI ---")
-print(f"Kp                              : {Kp:.2f} L/h·°C")
-print(f"Ti                              : {Ti:.2f} h")
-print(f"Set point                       : {T_setpoint:.2f} °C")
-print(f"Caudal nominal                  : {F0:.2f} L/h")
-print(f"Caudal máximo                   : {F_max:.2f} L/h")
-print("="*60)
+print(f"Kp                            : {Kp:.2f} L/h·°C")
+print(f"Ti                            : {Ti:.2f} h")
+print(f"Set point                     : {T_setpoint:.2f} °C")
+print(f"Caudal nominal                : {F0:.2f} L/h")
+print(f"Caudal máximo                 : {F_max:.2f} L/h")
+print(f"Fracción tiempo saturado      : {100*np.mean(Fc>=F_max):.2f} %")
 
+print("="*60)
 #Grafica
 f1, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(11, 7))
 ax1.plot(Tiempo, Biomasa, label='Biomasa', color='red')
@@ -526,6 +591,22 @@ ax4.set_xlabel('Tiempo [h]')
 for i in [ax1, ax2, ax3, ax4]:
     i.grid()
     i.legend()
+plt.tight_layout()
+plt.show()
 
+f2, (ax1, ax2) = plt.subplots(1, 2, figsize=(11, 7))
+ax1.plot(Tiempo,Producto_ac,color="darkgreen",linewidth=2.5)
+ax1.set_xlabel("Tiempo (h)")
+ax1.set_ylabel("Producto acumulado (g)")
+ax1.set_title("Producción acumulada de ácido láctico")
+
+ax2.plot(Tiempo,Productividad_ac,color="royalblue",linewidth=2.5)
+ax2.set_xlabel("Tiempo (h)")
+ax2.set_ylabel("Productividad acumulada (g/L·h)")
+ax2.set_title("Evolución de la productividad")
+
+for i in [ax1, ax2]:
+    i.grid()
+    i.legend()
 plt.tight_layout()
 plt.show()
