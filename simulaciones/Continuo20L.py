@@ -1,4 +1,4 @@
-'''Cultivo continuo con recirculacion de biomasa biorreactor 20L'''
+'''Cultivo continuo con recirculacion de biomasa biorreactor 20L HCW'''
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -36,7 +36,7 @@ def continuo_jacket(t, Y):
     dX = (miu - Kd)* X_calc #Porque se tienen membrana ideal
     dS = (F_feed/V_reactor) * (S_in - S_calc) - qs * X_calc
     dP = alpha * dX + qp * X_calc - (F_feed/V_reactor) * P_calc
-    dTr = (F_feed/V_reactor) * (Tr0 - Tr) + (rQ / (rho * Cp)) - (UA * (Tr - Tj)) / (rho * V_reactor * Cp)
+    dTr = (F_feed/V_reactor) * (T_feed - Tr) + (rQ / (rho * Cp)) - (UA * (Tr - Tj)) / (rho * V_reactor * Cp)
     dTj = (F/V_jacket) * (Tj_entrada - Tj) + (UA * (Tr - Tj)) / (rho * V_jacket * Cp)
     return [dX, dS, dP, dTr, dTj, dI]
 
@@ -44,6 +44,7 @@ def continuo_jacket(t, Y):
 V_reactor = 20 #[L]
 S_in = 10 #[g/L]
 F_feed = 1 #[L/h]
+T_feed = 25 #[°C]
 Kd = 0.0001 #coeficiente de muerte celular [h^-1]
 miu_max = 1.09 #tasa de crecimiento especifica maxima [h^-1]
 qs_max = 4.16 #tasa de utilizacion de sustrato especifica maxima [g/g*h]
@@ -92,14 +93,14 @@ F_max = 10 #[L/h]
 X0 = 0.43 #[g/L]
 S0 = 33 #[g/L]
 P0 = 0 #[g/L]
-Tr0 = 35 #[°C]
+Tr0 = 25 #[°C]
 Tj0 = 25 #[°C]
 I0 = 0 #[°C*h]
 array_iniciales = np.array([X0, S0, P0, Tr0, Tj0, I0])
 
 #Tiempo de ejecucion
 t_start = 0
-t_stop = 80
+t_stop = 24
 tspan = (t_start, t_stop)
 t_array = np.linspace(t_start, t_stop, num=10000)
 
@@ -118,6 +119,15 @@ Volumen = np.ones_like(Tiempo) * V_reactor
 Error = T_reactor - T_setpoint
 F_valor = F0 + Kp * Error + (Kp/Ti)*Integral_error
 F = np.clip(F_valor, F_min, F_max)
+
+print(f"Volumen del reactor: {V_reactor:.2f} L (constante)")
+print(f"Tasa de dilución (D): {F_feed/V_reactor:.3f} h⁻¹")
+print(f"Biomasa final: {Biomasa[-1]:.3f} g/L (máxima: {Biomasa.max():.3f} g/L en t={Tiempo[np.argmax(Biomasa)]:.2f} h)")
+print(f"Sustrato final: {Sustrato[-1]:.3f} g/L")
+print(f"Producto (lactato) final: {Producto[-1]:.3f} g/L")
+print(f"Productividad volumétrica final: {(F_feed/V_reactor)*Producto[-1]:.3f} g/L·h")
+print(f"Temperatura del reactor: min={T_reactor.min():.2f} °C, max={T_reactor.max():.2f} °C")
+print(f"Flujo de refrigerante: min={F.min():.2f} L/h, max={F.max():.2f} L/h")
 
 #Grafica 
 f1, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2)
