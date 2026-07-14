@@ -561,17 +561,79 @@ F = np.clip(F_valor, F_min, F_max)
 t_fin_alimentacion = Tiempo[Volumen >= V_max]
 t_fin_alimentacion = t_fin_alimentacion[0] if len(t_fin_alimentacion) > 0 else None
 
-print(f"Volumen final: {Volumen[-1]:.2f} L")
+# CÁLCULOS ADICIONALES
+
+conversion = (S0 + (S_in * (Volumen[-1] - V0)) / Volumen[-1] - Sustrato[-1]) / \
+             (S0 + (S_in * (Volumen[-1] - V0)) / Volumen[-1])
+
+producto_total = Producto[-1] * Volumen[-1]
+biomasa_total = Biomasa[-1] * Volumen[-1]
+substrato_alimentado = (Volumen[-1] - V0) * S_in
+
+Yps_real = producto_total / substrato_alimentado
+Yxs_real = biomasa_total / substrato_alimentado
+Pv = producto_total / (Volumen[-1] * Tiempo[-1])
+
+Q = np.trapz(UA * (T_reactor - T_jacket), Tiempo)
+
+# RESULTADOS DE OPERACIÓN
+
+print("\n" + "="*60)
+print("          RESULTADOS DE LA SIMULACIÓN")
+print("="*60)
+
+print("\n--- Operación del reactor ---")
+print(f"Volumen inicial                 : {V0:.2f} L")
+print(f"Volumen final                   : {Volumen[-1]:.2f} L")
+
 if t_fin_alimentacion is not None:
-    print(f"La alimentacion se corta en t = {t_fin_alimentacion:.2f} h (V alcanza V_max)")
+    print(f"Fin de la alimentación          : {t_fin_alimentacion:.2f} h")
 else:
-    print("La alimentacion nunca alcanza V_max en el tiempo simulado")
-print(f"Biomasa final: {Biomasa[-1]:.3f} g/L (maxima: {Biomasa.max():.3f} g/L en t={Tiempo[np.argmax(Biomasa)]:.2f} h)")
-print(f"Sustrato final: {Sustrato[-1]:.3f} g/L")
-print(f"Producto (lactato) final: {Producto[-1]:.3f} g/L")
-print(f"Productividad volumetrica promedio: {Producto[-1]/Tiempo[-1]:.3f} g/L*h")
-print(f"Temperatura del reactor: min={T_reactor.min():.2f} °C, max={T_reactor.max():.2f} °C")
-print(f"Fraccion de tiempo con flujo de refrigerante saturado (F=F_max): {np.mean(F_valor >= F_max)*100:.1f} %")
+    print("Fin de la alimentación          : No alcanza Vmax")
+
+print(f"Tiempo total de simulación      : {Tiempo[-1]:.2f} h")
+
+# BIOMASA, SUSTRATO Y PRODUCTO
+
+print("\n--- Resultados biológicos ---")
+print(f"Biomasa final                   : {Biomasa[-1]:.3f} g/L")
+print(f"Biomasa máxima                  : {Biomasa.max():.3f} g/L")
+print(f"Tiempo biomasa máxima           : {Tiempo[np.argmax(Biomasa)]:.2f} h")
+
+print(f"Sustrato final                  : {Sustrato[-1]:.3f} g/L")
+print(f"Conversión de sustrato          : {conversion*100:.2f} %")
+
+print(f"Producto final                  : {Producto[-1]:.3f} g/L")
+print(f"Producto total                  : {producto_total:.2f} g")
+
+print(f"Biomasa total                   : {biomasa_total:.2f} g")
+print(f"Sustrato alimentado             : {substrato_alimentado:.2f} g")
+
+# RENDIMIENTOS
+
+print("\n--- Indicadores de desempeño ---")
+print(f"Productividad volumétrica       : {Pv:.3f} g/L·h")
+print(f"Rendimiento Yps real            : {Yps_real:.3f} g/g")
+print(f"Rendimiento Yxs real            : {Yxs_real:.3f} g/g")
+
+
+# CONTROL DE TEMPERATURA
+
+print("\n--- Desempeño térmico ---")
+print(f"Temperatura mínima reactor      : {T_reactor.min():.2f} °C")
+print(f"Temperatura máxima reactor      : {T_reactor.max():.2f} °C")
+print(f"Energía removida por chaqueta   : {Q:.2f} J")
+
+print(f"Tiempo con Fc saturado          : {np.mean(F_valor >= F_max)*100:.2f} %")
+
+print("="*60)
+
+print("\n--- Parámetros del controlador PI ---")
+print(f"Kp                             : {Kp:.2f} L/h·°C")
+print(f"Ti                             : {Ti:.2f} h")
+print(f"Set point                      : {T_setpoint:.2f} °C")
+print(f"Caudal nominal                 : {F0:.2f} L/h")
+print(f"Caudal máximo                  : {F_max:.2f} L/h")
 
 #Grafica
 f1, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(11, 7))
