@@ -19,12 +19,6 @@ def continuo_jacket(t, Y):
     #Tasa volumetrica de generacion de energia
     rQ = Yqs * qs * X_calc
     
-    #Cambio de modo de operación
-    if t < 5:
-        D = 0          # Batch
-    else:
-        D = F_feed / V_reactor
-    
     #Controlador
     Error = Tr - T_setpoint
     F_control = F0 + Kp * Error + (Kp/Ti) * I
@@ -38,12 +32,15 @@ def continuo_jacket(t, Y):
     else:
         dI = Error
         
+    D = F_feed/V_reactor
+        
     #Ecuaciones diferenciales de las variables de estado
     dX = (miu - Kd)* X_calc #Porque se tienen membrana ideal
     dS = D * (S_in - S_calc) - qs * X_calc
     dP = alpha * dX + qp * X_calc - D * P_calc
     dTr = D * (T_feed - Tr) + (rQ / (rho * Cp)) - (UA * (Tr - Tj)) / (rho * V_reactor * Cp)
     dTj = (F/V_jacket) * (Tj_entrada - Tj) + (UA * (Tr - Tj)) / (rho * V_jacket * Cp)
+    dP_acumulado = 0 if t<5 else F_feed * P_calc
     return [dX, dS, dP, dTr, dTj, dI]
 
 ##Parametros
@@ -182,11 +179,7 @@ def objective (x):
         #Tasa volumetrica de generacion de energia
         rQ = Yqs * qs * X_calc
         
-        #Cambio de modo de operación
-        if t < 5:
-            D = 0          # Batch
-        else:
-            D = F_feed / V_reactor
+        D = F_feed / V_reactor
         
         #Controlador
         Error = Tr - T_setpoint
@@ -207,7 +200,7 @@ def objective (x):
         dP = alpha * dX + qp * X_calc - D * P_calc
         dTr = D * (T_feed - Tr) + (rQ / (rho * Cp)) - (UA * (Tr - Tj)) / (rho * V_reactor * Cp)
         dTj = (F/V_jacket) * (Tj_entrada - Tj) + (UA * (Tr - Tj)) / (rho * V_jacket * Cp)
-        dP_acumulado = F_feed * P_calc
+        dP_acumulado = 0 if t<5 else F_feed * P_calc
         return [dX, dS, dP, dTr, dTj, dI, dP_acumulado]
 
     ##Parametros
@@ -353,7 +346,7 @@ def modelo_control(t, Y, Kp, Ti):
     dTr = D * (T_feed - Tr) + (rQ / (rho * Cp)) - (UA * (Tr - Tj)) / (rho * V_reactor * Cp)
     dTj = (Fc/V_jacket) * (Tj_entrada - Tj) + (UA * (Tr - Tj)) / (rho * V_jacket * Cp)
     dI = 0 if (Fc_control > F_max and Error > 0) or (Fc_control < F_min and Error < 0) else Error
-    dP_acumulado = F_feed * P_calc
+    dP_acumulado = 0 if t<5 else F_feed * P_calc
     return [dX, dS, dP, dTr, dTj, dI, dP_acumulado]
 
 # Función de costo: Minimización del IAE (Error Integral Absoluto) 
@@ -438,7 +431,7 @@ def continuo_jacket(t, Y):
     dTr = D * (T_feed - Tr) + (rQ / (rho * Cp)) - (UA * (Tr - Tj)) / (rho * V_reactor * Cp)
     dTj = (Fc/V_jacket) * (Tj_entrada - Tj) + (UA * (Tr - Tj)) / (rho * V_jacket * Cp)
     dI = 0 if (Fc_control > F_max and Error > 0) or (Fc_control < F_min and Error < 0) else Error
-    dP_acumulado = F_feed * P_calc
+    dP_acumulado = 0 if t<5 else F_feed * P_calc
     return [dX, dS, dP, dTr, dTj, dI, dP_acumulado]
 
 ##Parametros
