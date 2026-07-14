@@ -21,7 +21,7 @@ def continuo_jacket(t, Y):
     
     #Controlador
     Error = Tr - T_setpoint
-    F_control = F0 + Kp * Error #+ (Kp/Ti) * I
+    F_control = F0 + Kp * Error + (Kp/Ti) * I
     F = np.clip(F_control, F_min, F_max)
     
     #Evitar windup
@@ -42,8 +42,8 @@ def continuo_jacket(t, Y):
 
 ##Parametros
 V_reactor = 20 #[L]
-S_in = 34 #[g/L]
-F_feed = 10 #[L/h]
+S_in = 10 #[g/L]
+F_feed = 1 #[L/h]
 Kd = 0.0001 #coeficiente de muerte celular [h^-1]
 miu_max = 1.09 #tasa de crecimiento especifica maxima [h^-1]
 qs_max = 4.16 #tasa de utilizacion de sustrato especifica maxima [g/g*h]
@@ -82,17 +82,17 @@ Yqs = 3963 #Rendimiento termico [J/g]
 
 #Parametros del controlador PI
 T_setpoint = 30 #[°C]
-Kp = 0.5 #[L/h*°C]
+Kp = 9.59 #[L/h*°C]
 Ti = 3.66 #[h]
-F0 = 0 #[L/h]
+F0 = 5 #[L/h]
 F_min = 0 #[L/h]
 F_max = 10 #[L/h]
 
 #Condiciones iniciales
-X0 = 0.5 #[g/L]
-S0 = 0 #[g/L]
+X0 = 0.43 #[g/L]
+S0 = 33 #[g/L]
 P0 = 0 #[g/L]
-Tr0 = 25 #[°C]
+Tr0 = 35 #[°C]
 Tj0 = 25 #[°C]
 I0 = 0 #[°C*h]
 array_iniciales = np.array([X0, S0, P0, Tr0, Tj0, I0])
