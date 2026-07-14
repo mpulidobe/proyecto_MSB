@@ -44,6 +44,70 @@ for k, v in Escenarios.items():
     Y_init = np.array([v['X0'], v['S0'], v['P0']])
     sol[k] = solve_ivp(modelo_batch, t_span, Y_init, t_eval=t_array, args=(v,))
 
+# INDICADORES DE DESEMPEÑO
+
+print("\n" + "="*80)
+print("                 INDICADORES DE DESEMPEÑO DEL CULTIVO BATCH")
+print("="*80)
+
+for nombre, p in Escenarios.items():
+
+    tiempo = sol[nombre].t
+    biomasa = sol[nombre].y[0]
+    sustrato = sol[nombre].y[1]
+    producto = sol[nombre].y[2]
+
+    # Biomasa
+    biomasa_max = biomasa.max()
+    t_biomasa_max = tiempo[np.argmax(biomasa)]
+
+    # Consumo de sustrato
+    s_consumido = p["S0"] - sustrato[-1]
+    conversion = s_consumido / p["S0"] * 100
+
+    # Producción de lactato
+    producto_generado = producto[-1] - p["P0"]
+
+    # Rendimientos experimentales
+    if s_consumido > 0:
+        Yxs_real = (biomasa[-1] - p["X0"]) / s_consumido
+        Yps_real = producto_generado / s_consumido
+    else:
+        Yxs_real = np.nan
+        Yps_real = np.nan
+
+    # Productividad volumétrica
+    productividad = producto_generado / tiempo[-1]
+
+    # Productividad específica
+    productividad_especifica = producto_generado / biomasa.max()
+
+    print("\n" + "-"*80)
+    print(f"Escenario: {nombre}")
+    print("-"*80)
+
+    print(f"Biomasa inicial                 : {p['X0']:.3f} g/L")
+    print(f"Biomasa final                   : {biomasa[-1]:.3f} g/L")
+    print(f"Biomasa máxima                  : {biomasa_max:.3f} g/L")
+    print(f"Tiempo biomasa máxima           : {t_biomasa_max:.2f} h")
+
+    print(f"\nSustrato inicial                : {p['S0']:.3f} g/L")
+    print(f"Sustrato final                  : {sustrato[-1]:.3f} g/L")
+    print(f"Sustrato consumido              : {s_consumido:.3f} g/L")
+    print(f"Conversión de sustrato          : {conversion:.2f} %")
+
+    print(f"\nProducto inicial                : {p['P0']:.3f} g/L")
+    print(f"Producto final                  : {producto[-1]:.3f} g/L")
+    print(f"Producto generado               : {producto_generado:.3f} g/L")
+
+    print(f"\nProductividad volumétrica       : {productividad:.3f} g/L·h")
+    print(f"Productividad específica        : {productividad_especifica:.3f} g/g")
+
+    print(f"Rendimiento Yxs                 : {Yxs_real:.3f} g/g")
+    print(f"Rendimiento Yps                 : {Yps_real:.3f} g/g")
+
+print("="*80)
+
 #Graficas
 def plot_escala(nombre, keys, colors):
     f, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(8, 10))
@@ -61,7 +125,7 @@ def plot_escala(nombre, keys, colors):
     for i, ax in enumerate(axes):
         ax.set_title(titulos[i])
         ax.set_xlabel('Tiempo (h)')
-        ax.set_ylabel(f'Concentración ({unidades[i]})')
+        ax.set_ylabel(f'Concentración (g/L)')
         ax.set_xlim(left=0)
         ax.set_ylim(bottom=0)
 
