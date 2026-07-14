@@ -128,7 +128,6 @@ print(f"Producto (lactato) final: {Producto[-1]:.3f} g/L")
 print(f"Productividad volumétrica final: {(F_feed/V_reactor)*Producto[-1]:.3f} g/L·h")
 print(f"Temperatura del reactor: min={T_reactor.min():.2f} °C, max={T_reactor.max():.2f} °C")
 print(f"Flujo de refrigerante: min={F.min():.2f} L/h, max={F.max():.2f} L/h")
-print(f"Fracción de tiempo con flujo de refrigerante saturado (F=F_max): {np.mean(F_valor >= F_max)*100:.1f} %")
 
 #Grafica 
 f1, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2)
