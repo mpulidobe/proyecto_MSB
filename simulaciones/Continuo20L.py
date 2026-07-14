@@ -113,6 +113,7 @@ Producto = solucion.y[2]
 T_reactor = solucion.y[3]
 T_jacket = solucion.y[4]
 Integral_error = solucion.y[5]
+
 Error = T_reactor - T_setpoint
 F_valor = F0 + Kp * Error + (Kp/Ti)*Integral_error
 F = np.clip(F_valor, F_min, F_max)
@@ -121,12 +122,19 @@ F = np.clip(F_valor, F_min, F_max)
 f1, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2)
 ax1.plot(Tiempo, Biomasa, label = 'Biomasa', color = 'red')
 ax1.plot(Tiempo, Sustrato, label = 'Sustrato', color = 'blue')
-ax1.plot(Tiempo, Producto, label = 'Producto', color = 'green')
+ax1.plot(Tiempo, Producto, label = 'Producto (lactato)', color = 'green')
+ax1.set_xlabel('Tiempo [h]'); ax1.set_ylabel('Concentracion [g/L]')
+
 ax2.plot(Tiempo, T_reactor, label = 'Temperatura reactor', color = 'orange')
 ax2.plot(Tiempo, T_jacket, label = 'Temperatura chaqueta', color = 'purple')
 ax2.axhline(T_setpoint, color = 'darkred', linestyle='--', label = 'Set point')
+ax2.set_xlabel('Tiempo [h]'); ax2.set_ylabel('Temperatura [°C]')
+
 ax3.plot(Tiempo, Error, label = 'Error', color = 'gold')
-ax4.plot(Tiempo, F, label = 'Flujo real', color = 'magenta')
+ax3.set_xlabel('Tiempo [h]'); ax3.set_ylabel('Error [°C]')
+
+ax4.plot(Tiempo, F, label = 'Flujo refrigerante real', color = 'magenta')
+ax4.set_xlabel('Tiempo [h]')
 
 for i in [ax1, ax2, ax3, ax4]:
     i.grid()
