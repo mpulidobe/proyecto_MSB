@@ -17,11 +17,11 @@ def continuo_jacket(t, Y):
     qp = (qp_max * S_calc * Kip * np.exp(-P_calc/Kpp))/((Ksp + S_calc)*(Kip + S_calc))
     
     #Tasa volumetrica de generacion de energia
-    rQ = (Yqs * miu * X_calc) / Yxs
+    rQ = Yqs * qs * X_calc
     
     #Controlador
     Error = Tr - T_setpoint
-    F_control = F0 + Kp * Error #+ (Kp/Ti) * I
+    F_control = F0 + Kp * Error + (Kp/Ti) * I
     F = np.clip(F_control, F_min, F_max)
     
     #Evitar windup
@@ -42,8 +42,8 @@ def continuo_jacket(t, Y):
 
 ##Parametros
 V_reactor = 20 #[L]
-S_in = 34 #[g/L]
-F_feed = 10 #[L/h]
+S_in = 10 #[g/L]
+F_feed = 1 #[L/h]
 Kd = 0.0001 #coeficiente de muerte celular [h^-1]
 miu_max = 1.09 #tasa de crecimiento especifica maxima [h^-1]
 qs_max = 4.16 #tasa de utilizacion de sustrato especifica maxima [g/g*h]
@@ -82,17 +82,17 @@ Yqs = 3963 #Rendimiento termico [J/g]
 
 #Parametros del controlador PI
 T_setpoint = 30 #[°C]
-Kp = 0 #[L/h*°C]
+Kp = 9.59 #[L/h*°C]
 Ti = 3.66 #[h]
-F0 = 0 #[L/h]
+F0 = 5 #[L/h]
 F_min = 0 #[L/h]
 F_max = 10 #[L/h]
 
 #Condiciones iniciales
-X0 = 0.5 #[g/L]
-S0 = 0 #[g/L]
+X0 = 0.43 #[g/L]
+S0 = 33 #[g/L]
 P0 = 0 #[g/L]
-Tr0 = 25 #[°C]
+Tr0 = 35 #[°C]
 Tj0 = 25 #[°C]
 I0 = 0 #[°C*h]
 array_iniciales = np.array([X0, S0, P0, Tr0, Tj0, I0])
@@ -113,6 +113,8 @@ Producto = solucion.y[2]
 T_reactor = solucion.y[3]
 T_jacket = solucion.y[4]
 Integral_error = solucion.y[5]
+Volumen = np.ones_like(Tiempo) * V_reactor
+
 Error = T_reactor - T_setpoint
 F_valor = F0 + Kp * Error + (Kp/Ti)*Integral_error
 F = np.clip(F_valor, F_min, F_max)
@@ -121,12 +123,20 @@ F = np.clip(F_valor, F_min, F_max)
 f1, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2)
 ax1.plot(Tiempo, Biomasa, label = 'Biomasa', color = 'red')
 ax1.plot(Tiempo, Sustrato, label = 'Sustrato', color = 'blue')
-ax1.plot(Tiempo, Producto, label = 'Producto', color = 'green')
+ax1.plot(Tiempo, Producto, label = 'Producto (lactato)', color = 'green')
+ax1.set_xlabel('Tiempo [h]'); ax1.set_ylabel('Concentracion [g/L]')
+
 ax2.plot(Tiempo, T_reactor, label = 'Temperatura reactor', color = 'orange')
 ax2.plot(Tiempo, T_jacket, label = 'Temperatura chaqueta', color = 'purple')
 ax2.axhline(T_setpoint, color = 'darkred', linestyle='--', label = 'Set point')
+ax2.set_xlabel('Tiempo [h]'); ax2.set_ylabel('Temperatura [°C]')
+
 ax3.plot(Tiempo, Error, label = 'Error', color = 'gold')
-ax4.plot(Tiempo, F, label = 'Flujo real', color = 'magenta')
+ax3.set_xlabel('Tiempo [h]'); ax3.set_ylabel('Error [°C]')
+
+ax4.plot(Tiempo, F, label = 'Flujo refrigerante real', color = 'magenta')
+ax4.plot(Tiempo, Volumen, label='Volumen reactor', color='teal')
+ax4.set_xlabel('Tiempo [h]')
 
 for i in [ax1, ax2, ax3, ax4]:
     i.grid()
