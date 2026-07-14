@@ -108,7 +108,7 @@ array_iniciales = np.array([X0, S0, P0, Tr0, Tj0, I0, V0])
 
 #Tiempo de ejecucion
 t_start = 0
-t_stop = 80
+t_stop = 24
 tspan = (t_start, t_stop)
 t_array = np.linspace(t_start, t_stop, num=1000)
 
