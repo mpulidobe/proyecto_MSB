@@ -103,7 +103,8 @@ P0 = 0 #[g/L]
 Tr0 = 30 #[°C]
 Tj0 = 25 #[°C]
 I0 = 0 #[°C*h]
-array_iniciales = np.array([X0, S0, P0, Tr0, Tj0, I0])
+P_acumulado0 = 0
+array_iniciales = np.array([X0, S0, P0, Tr0, Tj0, I0, P_acumulado0])
 
 #Tiempo de ejecucion
 t_start = 0
