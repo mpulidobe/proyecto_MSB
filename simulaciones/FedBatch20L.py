@@ -25,7 +25,7 @@ def fedbatch_jacket(t, Y):
         F=0 #Fase Inicial Bacth
         dV=0
     else:
-        F=F_feed #Inicio fase fed-bacth
+        F=F_feed if V_calc < 20 else 0 #Inicio fase fed-bacth
         dV=F
         
     D=F/V_calc #Tasa de dilución    
@@ -105,7 +105,7 @@ F_max = 10 #[L/h]
 X0 = 0.43 #[g/L]
 S0 = 33 #[g/L]
 P0 = 0 #[g/L]
-Tr0 = 30 #[°C]
+Tr0 = 30#[°C]
 Tj0 = 25 #[°C]
 I0 = 0 #[°C*h]
 array_iniciales = np.array([X0, S0, P0, Tr0, Tj0, I0, V0])
@@ -204,7 +204,7 @@ def objective (x):
             F=0 #Fase Inicial Bacth
             dV=0
         else:
-            F=F_feed #Inicio fase fed-bacth
+            F=F_feed  #Inicio fase fed-bacth
             dV=F
             
         D=F/V_calc #Tasa de dilución    
@@ -327,6 +327,102 @@ print(f"  Sfeed óptimo  : {Sfeed_opt:.4f} g/L")
 print(f"  Productividad máxima: {prod_max:.6f} g/(L·h)")
 print(f"{'='*45}\n")
 # %%
+'''Cultivo fedbatch biorreactor 20L HCW,sintonizacion del controlador '''
+import numpy as np
+from scipy.integrate import solve_ivp
+from scipy.optimize import minimize
+import matplotlib.pyplot as plt
+
+# 1. Parámetros del sistema 
+V0, V_max = 1.5, 20
+S_in, F_feed, T_feed = 55.47, 1.0, 25.0
+T_setpoint = 30.0
+rho, Cp, Yqs = 1000.0, 4.182, 3963.0
+UA, V_jacket, Tj_entrada = 75*3600, 2.0, 25
+F0, F_min, F_max = 1, 0.0, 10.0
+
+# Parámetros cinéticos 
+miu_max, qs_max, qp_max = 1.09, 4.16, 1.863
+Ksx, Kix, Kpx = 4.229, 394.20, 5.001
+Kss, Kis, Kps = 0.15, 143.391, 20.07
+Ksp, Kip, Kpp = 0.065, 373.89, 42.83
+alpha, Kd = 0.017, 0.0001
+
+# 2. Modelo dinámico para la simulación
+def modelo_control(t, Y, Kp, Ti):
+    X, S, P, Tr, Tj, I, V = Y
+    X_c, S_c, P_c, V_c = max(0, X), max(0, S), max(0, P), max(1e-6, V)
+
+    # Cinética
+    miu = (miu_max * S_c * Kix) / ((Ksx + S_c) * (Kix + S_c)) * np.exp(-P_c/Kpx)
+    qs = (qs_max * S_c * Kis) / ((Kss + S_c) * (Kis + S_c)) * np.exp(-P_c/Kps)
+    qp = (qp_max * S_c * Kip) / ((Ksp + S_c) * (Kip + S_c)) * np.exp(-P_c/Kpp)
+    rQ = Yqs * qs * X_c # Generación de calor 
+
+    # Operación Fed-batch
+    F = F_feed if (t >= 5 and V_c < V_max) else 0
+    D = F / V_c
+
+    # Controlador PI (Variable manipulada: Fc) [3]
+    Error = Tr - T_setpoint
+    Fc_control = F0 + Kp * Error + (Kp/Ti) * I
+    Fc = np.clip(Fc_control, F_min, F_max)
+
+    # Balances de masa, energía e integral
+    dX = (miu - Kd) * X_c - D * X_c
+    dS = D * (S_in - S_c) - qs * X_c
+    dP = (alpha * (miu - Kd) * X_c + qp * X_c) - D * P_c
+    dTr = (F/V_c)*(T_feed - Tr) + (rQ/(rho*Cp)) - (UA*(Tr-Tj))/(rho*V_c*Cp) # [6]
+    dTj = (Fc/V_jacket)*(Tj_entrada - Tj) + (UA*(Tr-Tj))/(rho*V_jacket*Cp) # [3]
+    dI = 0 if (Fc_control > F_max and Error > 0) or (Fc_control < F_min and Error < 0) else Error
+    dV = F
+
+    return [dX, dS, dP, dTr, dTj, dI, dV]
+
+# 3. Función de costo: Minimización del IAE (Error Integral Absoluto) 
+def objetivo_iae(parametros):
+
+    Kp_opt, Ti_opt = parametros
+
+    if Kp_opt <= 0 or Ti_opt <= 0:
+        return 1e10
+
+    y0 = [0.43, 33, 0, 30.5, 25, 0, 1.5]
+
+    t_span = (0,24)
+    t_eval = np.linspace(0,24,200)
+
+    sol = solve_ivp(
+        modelo_control,
+        t_span,
+        y0,
+        args=(Kp_opt,Ti_opt),
+        t_eval=t_eval,
+        method='RK45'
+    )
+
+    if not sol.success:
+        return 1e10
+
+    iae = np.trapz(
+        np.abs(sol.y[3]-T_setpoint),
+        sol.t
+    )
+
+    return iae
+
+# 4. Ejecución de la sintonización
+print("Sintonizando controlador... Por favor espere.")
+inv_inicial = [9.59, 3.66] # Punto de partida literario [1]
+resultado = minimize(objetivo_iae, inv_inicial, method='Nelder-Mead', bounds=[(0.1, 50), (0.1, 20)])
+
+Kp_final, Ti_final = resultado.x
+print(f"\n--- Sintonización Completada ---")
+print(f"Kp óptimo: {Kp_final:.4f} L/h·°C")
+print(f"Ti óptimo: {Ti_final:.4f} h")
+print(f"IAE Mínimo: {resultado.fun:.4f}")
+
+# %%
 '''Cultivo fedbatch biorreactor 20L HCW  con sfeed optimizado '''
 
 import numpy as np
@@ -354,7 +450,7 @@ def fedbatch_jacket(t, Y):
         F=0 #Fase Inicial Bacth
         dV=0
     else:
-        F=F_feed #Inicio fase fed-bacth
+        F=F_feed if V_calc < 20 else 0 #Inicio fase fed-bacth
         dV=F
         
     D=F/V_calc #Tasa de dilución    
@@ -372,7 +468,7 @@ def fedbatch_jacket(t, Y):
     if (Fc_control > F_max and Error > 0) or (Fc_control < F_min and Error < 0):
         dI = 0
     else:
-        dI = Error
+        dI =Error
 
     #Balance de Energia 
     dTr = (F/V_calc) * (T_feed - Tr) + (rQ / (rho * Cp)) - (UA * (Tr - Tj)) / (rho * V_calc * Cp) # Temperatura en el reactor 
@@ -413,7 +509,7 @@ Cp = 4.182 #Capacidad calorifica del medio [J/g*°C]
 
 #Chaqueta de enfriamiento
 V_jacket = 2 #Volumen de la chaqueta [L]
-Tj_entrada = 10 #[°C]
+Tj_entrada = 25 #[°C]
 UA = 75 * 3600 #[J/h*°C]
 
 #Rendimientos
@@ -424,9 +520,9 @@ Yqs = 3963 #Rendimiento termico [J/g]
 
 #Parametros del controlador PI (flujo de refrigerante en la chaqueta)
 T_setpoint = 30 #[°C]
-Kp = 9.59 #[L/h*°C]
-Ti = 3.66 #[h]
-F0 = 5 #[L/h]
+Kp = 43.86 #[L/h*°C]
+Ti = 0.1000 #[h]
+F0 = 1 #[L/h]
 F_min = 0 #[L/h]
 F_max = 10 #[L/h]
 
@@ -435,13 +531,13 @@ X0 = 0.43 #[g/L]
 S0 = 33 #[g/L]
 P0 = 0 #[g/L]
 Tr0 = 30 #[°C]
-Tj0 = 25 #[°C]
+Tj0 = 29 #[°C]
 I0 = 0 #[°C*h]
 array_iniciales = np.array([X0, S0, P0, Tr0, Tj0, I0, V0])
 
 #Tiempo de ejecucion
 t_start = 0
-t_stop = 24
+t_stop = 60
 tspan = (t_start, t_stop)
 t_array = np.linspace(t_start, t_stop, num=1000)
 
@@ -502,4 +598,3 @@ for i in [ax1, ax2, ax3, ax4]:
 
 plt.tight_layout()
 plt.show()
-
