@@ -366,7 +366,7 @@ def modelo_control(t, Y, Kp, Ti):
     F = F_feed if (t >= 5 and V_c < V_max) else 0
     D = F / V_c
 
-    # Controlador PI (Variable manipulada: Fc) [3]
+    # Controlador PI (Variable manipulada: Fc)
     Error = Tr - T_setpoint
     Fc_control = F0 + Kp * Error + (Kp/Ti) * I
     Fc = np.clip(Fc_control, F_min, F_max)

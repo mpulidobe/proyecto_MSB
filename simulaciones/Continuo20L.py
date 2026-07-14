@@ -301,3 +301,93 @@ print(f"  Productividad máxima  : {prod_max:.6f} g/(L·h)")
 print(f"{'='*45}\n")
 #%%
 '''Cultivo continuo con recirculacion de biomasa biorreactor 20L HCW - sintonizacion del controlador'''
+
+import numpy as np
+from scipy.integrate import solve_ivp
+from scipy.optimize import minimize
+import matplotlib.pyplot as plt
+
+# Parámetros del sistema 
+V_reactor = 20
+S_in, F_feed, T_feed = 10, 0.1, 25.0
+T_setpoint = 30.0
+rho, Cp, Yqs = 1000.0, 4.182, 3963.0
+UA, V_jacket, Tj_entrada = 75*3600, 2.0, 25
+F0, F_min, F_max = 5, 0.0, 10.0
+
+# Parámetros cinéticos 
+miu_max, qs_max, qp_max = 1.09, 4.16, 1.863
+Ksx, Kix, Kpx = 4.229, 394.20, 5.001
+Kss, Kis, Kps = 0.15, 143.391, 20.07
+Ksp, Kip, Kpp = 0.065, 373.89, 42.83
+alpha, Kd = 0.017, 0.0001
+
+# Modelo dinámico para la simulación
+def modelo_control(t, Y, Kp, Ti):
+    X, S, P, Tr, Tj, I, P_acumulado = Y
+    X_calc, S_calc, P_calc = max(0, X), max(0, S), max(0, P)
+
+    # Cinética
+    miu = (miu_max * S_calc * Kix) / ((Ksx + S_calc) * (Kix + S_calc)) * np.exp(-P_calc/Kpx)
+    qs = (qs_max * S_calc * Kis) / ((Kss + S_calc) * (Kis + S_calc)) * np.exp(-P_calc/Kps)
+    qp = (qp_max * S_calc * Kip) / ((Ksp + S_calc) * (Kip + S_calc)) * np.exp(-P_calc/Kpp)
+    rQ = Yqs * qs * X_calc # Generación de calor 
+    
+    D = F_feed/V_reactor if (t>=5) else 0
+
+    # Controlador PI (Variable manipulada: Fc)
+    Error = Tr - T_setpoint
+    Fc_control = F0 + Kp * Error + (Kp/Ti) * I
+    Fc = np.clip(Fc_control, F_min, F_max)
+    
+    #Ecuaciones diferenciales de las variables de estado
+    dX = (miu - Kd)* X_calc #Porque se tienen membrana ideal
+    dS = D * (S_in - S_calc) - qs * X_calc
+    dP = alpha * dX + qp * X_calc - D * P_calc
+    dTr = D * (T_feed - Tr) + (rQ / (rho * Cp)) - (UA * (Tr - Tj)) / (rho * V_reactor * Cp)
+    dTj = (F/V_jacket) * (Tj_entrada - Tj) + (UA * (Tr - Tj)) / (rho * V_jacket * Cp)
+    dI = 0 if (Fc_control > F_max and Error > 0) or (Fc_control < F_min and Error < 0) else Error
+    return [dX, dS, dP, dTr, dTj, dI]
+
+# Función de costo: Minimización del IAE (Error Integral Absoluto) 
+def objetivo_iae(parametros):
+
+    Kp_opt, Ti_opt = parametros
+
+    if Kp_opt <= 0 or Ti_opt <= 0:
+        return 1e10
+
+    y0 = [0.43, 33, 0, 30.5, 25, 0, 1.5]
+
+    t_span = (0,24)
+    t_eval = np.linspace(0,24,200)
+
+    sol = solve_ivp(
+        modelo_control,
+        t_span,
+        y0,
+        args=(Kp_opt,Ti_opt),
+        t_eval=t_eval,
+        method='RK45'
+    )
+
+    if not sol.success:
+        return 1e10
+
+    iae = np.trapezoid(
+        np.abs(sol.y[3]-T_setpoint),
+        sol.t
+    )
+
+    return iae
+
+# Ejecución de la sintonización
+print("Sintonizando controlador... Por favor espere.")
+inv_inicial = [9.59, 3.66] # Punto de partida literario [1]
+resultado = minimize(objetivo_iae, inv_inicial, method='Nelder-Mead', bounds=[(0.1, 50), (0.1, 20)])
+
+Kp_final, Ti_final = resultado.x
+print(f"\n--- Sintonización Completada ---")
+print(f"Kp óptimo: {Kp_final:.4f} L/h·°C")
+print(f"Ti óptimo: {Ti_final:.4f} h")
+print(f"IAE Mínimo: {resultado.fun:.4f}")
