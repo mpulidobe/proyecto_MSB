@@ -98,7 +98,7 @@ Yqs = 3963 #Rendimiento termico [J/g]
 T_setpoint = 30 #[°C]
 Kp = 9.59 #[L/h*°C]
 Ti = 3.66 #[h]
-F0 = 5 #[L/h]
+F0 = 1 #[L/h]
 F_min = 0 #[L/h]
 F_max = 10 #[L/h]
 
@@ -277,7 +277,7 @@ def objective (x):
     T_setpoint = 30 #[°C]
     Kp = 9.59 #[L/h*°C]
     Ti = 3.66 #[h]
-    F0 = 5 #[L/h]
+    F0 = 1 #[L/h]
     F_min = 0 #[L/h]
     F_max = 10 #[L/h]
     
@@ -338,7 +338,7 @@ import matplotlib.pyplot as plt
 
 # Parámetros del sistema 
 V0, V_max = 1.5, 20
-S_in, F_feed, T_feed = 55.47, 1.0, 25.0
+S_in, F_feed, T_feed = 57.99, 1.0, 25.0
 T_setpoint = 30.0
 rho, Cp, Yqs = 1000.0, 4.182, 3963.0
 UA, V_jacket, Tj_entrada = 75*3600, 2.0, 25
@@ -426,7 +426,7 @@ print(f"Ti óptimo: {Ti_final:.4f} h")
 print(f"IAE Mínimo: {resultado.fun:.4f}")
 
 # %%
-'''Cultivo fedbatch biorreactor 20L HCW con sfeed optimizado'''
+'''Cultivo fedbatch biorreactor 20L HCW con sfeed optimizado el controlador sintonizado '''
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -482,7 +482,7 @@ def fedbatch_jacket(t, Y):
 ##Parametros
 V0 = 1.5          #[L] volumen inicial de caldo en el reactor 
 V_max = 20        #[L] volumen maximo de operacion del reactor 
-S_in = 55.472 #[g/L]
+S_in = 57.99 #[g/L]
 F_feed = 1 #[L/h]
 T_feed = 25 #[°C] temperatura de la corriente de alimentacion 
 Kd = 0.0001 #coeficiente de muerte celular [h^-1]
@@ -523,9 +523,9 @@ Yqs = 3963 #Rendimiento termico [J/g]
 
 #Parametros del controlador PI (flujo de refrigerante en la chaqueta)
 T_setpoint = 30 #[°C]
-Kp = 43.86 #[L/h*°C]
+Kp = 47.3736 #[L/h*°C]
 Ti = 0.1000 #[h]
-F0 = 5 #[L/h]
+F0 = 1 #[L/h]
 F_min = 0 #[L/h]
 F_max = 10 #[L/h]
 
