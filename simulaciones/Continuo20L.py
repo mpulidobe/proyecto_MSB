@@ -21,7 +21,7 @@ def continuo_jacket(t, Y):
     
     #Controlador
     Error = Tr - T_setpoint
-    F_control = F0 + Kp * Error + (Kp/Ti) * I
+    F_control = F0 + Kp * Error #+ (Kp/Ti) * I
     F = np.clip(F_control, F_min, F_max)
     
     #Evitar windup
@@ -42,8 +42,8 @@ def continuo_jacket(t, Y):
 
 ##Parametros
 V_reactor = 20 #[L]
-S_in = 10 #[g/L]
-F_feed = 1 #[L/h]
+S_in = 34 #[g/L]
+F_feed = 10 #[L/h]
 Kd = 0.0001 #coeficiente de muerte celular [h^-1]
 miu_max = 1.09 #tasa de crecimiento especifica maxima [h^-1]
 qs_max = 4.16 #tasa de utilizacion de sustrato especifica maxima [g/g*h]
@@ -82,17 +82,17 @@ Yqs = 3963 #Rendimiento termico [J/g]
 
 #Parametros del controlador PI
 T_setpoint = 30 #[°C]
-Kp = 9.59 #[L/h*°C]
+Kp = 0 #[L/h*°C]
 Ti = 3.66 #[h]
-F0 = 5 #[L/h]
+F0 = 0 #[L/h]
 F_min = 0 #[L/h]
 F_max = 10 #[L/h]
 
 #Condiciones iniciales
 X0 = 0.5 #[g/L]
-S0 = 10 #[g/L]
+S0 = 0 #[g/L]
 P0 = 0 #[g/L]
-Tr0 = 35 #[°C]
+Tr0 = 25 #[°C]
 Tj0 = 25 #[°C]
 I0 = 0 #[°C*h]
 array_iniciales = np.array([X0, S0, P0, Tr0, Tj0, I0])
@@ -101,7 +101,7 @@ array_iniciales = np.array([X0, S0, P0, Tr0, Tj0, I0])
 t_start = 0
 t_stop = 80
 tspan = (t_start, t_stop)
-t_array = np.linspace(t_start, t_stop, num=1000)
+t_array = np.linspace(t_start, t_stop, num=10000)
 
 #Metodo numerico
 solucion = solve_ivp(continuo_jacket, tspan, array_iniciales, t_eval = t_array)
@@ -121,6 +121,7 @@ F = np.clip(F_valor, F_min, F_max)
 f1, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2)
 ax1.plot(Tiempo, Biomasa, label = 'Biomasa', color = 'red')
 ax1.plot(Tiempo, Sustrato, label = 'Sustrato', color = 'blue')
+ax1.plot(Tiempo, Producto, label = 'Producto', color = 'green')
 ax2.plot(Tiempo, T_reactor, label = 'Temperatura reactor', color = 'orange')
 ax2.plot(Tiempo, T_jacket, label = 'Temperatura chaqueta', color = 'purple')
 ax2.axhline(T_setpoint, color = 'darkred', linestyle='--', label = 'Set point')
