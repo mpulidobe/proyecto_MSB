@@ -1,4 +1,4 @@
-'''Cultivo continuo con recirculacion de biomasa biorreactor 20L'''
+'''Cultivo continuo con recirculacion de biomasa biorreactor 20L HCW'''
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -119,6 +119,16 @@ Volumen = np.ones_like(Tiempo) * V_reactor
 Error = T_reactor - T_setpoint
 F_valor = F0 + Kp * Error + (Kp/Ti)*Integral_error
 F = np.clip(F_valor, F_min, F_max)
+
+print(f"Volumen del reactor: {V_reactor:.2f} L (constante)")
+print(f"Tasa de dilución (D): {F_feed/V_reactor:.3f} h⁻¹")
+print(f"Biomasa final: {Biomasa[-1]:.3f} g/L (máxima: {Biomasa.max():.3f} g/L en t={Tiempo[np.argmax(Biomasa)]:.2f} h)")
+print(f"Sustrato final: {Sustrato[-1]:.3f} g/L")
+print(f"Producto (lactato) final: {Producto[-1]:.3f} g/L")
+print(f"Productividad volumétrica final: {(F_feed/V_reactor)*Producto[-1]:.3f} g/L·h")
+print(f"Temperatura del reactor: min={T_reactor.min():.2f} °C, max={T_reactor.max():.2f} °C")
+print(f"Flujo de refrigerante: min={F.min():.2f} L/h, max={F.max():.2f} L/h")
+print(f"Fracción de tiempo con flujo de refrigerante saturado (F=F_max): {np.mean(F_valor >= F_max)*100:.1f} %")
 
 #Grafica 
 f1, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2)
