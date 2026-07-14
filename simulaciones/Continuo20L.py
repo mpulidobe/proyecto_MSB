@@ -82,7 +82,7 @@ Yqs = 3963 #Rendimiento termico [J/g]
 
 #Parametros del controlador PI
 T_setpoint = 30 #[°C]
-Kp = 0 #[L/h*°C]
+Kp = 0.5 #[L/h*°C]
 Ti = 3.66 #[h]
 F0 = 0 #[L/h]
 F_min = 0 #[L/h]
