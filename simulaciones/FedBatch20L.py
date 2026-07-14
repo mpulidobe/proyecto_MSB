@@ -285,7 +285,7 @@ def objective (x):
     X0 = 0.43 #[g/L]
     S0 = 33 #[g/L]
     P0 = 0 #[g/L]
-    Tr0 = 35 #[°C]
+    Tr0 = 30 #[°C]
     Tj0 = 25 #[°C]
     I0 = 0 #[°C*h]
     array_iniciales = np.array([X0, S0, P0, Tr0, Tj0, I0, V0])
@@ -307,6 +307,7 @@ def objective (x):
     T_jacket = solucion.y[4]
     Integral_error = solucion.y[5]
     Volumen = solucion.y[6]
+    
     # Encontrar el índice donde el volumen es máximo (Punto de parada del Fed-batch)
     i_opt = np.argmax(Volumen) 
     t_final = Tiempo[i_opt]
