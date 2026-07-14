@@ -323,7 +323,7 @@ from scipy.optimize import minimize
 
 # Parámetros del sistema 
 V_reactor = 20
-S_in, F_feed, T_feed = 10, 0.1, 25.0
+S_in, F_feed, T_feed = 299.7790, 4.9958, 25.0
 T_setpoint = 30.0
 rho, Cp, Yqs = 1000.0, 4.182, 3963.0
 UA, V_jacket, Tj_entrada = 75*3600, 2.0, 10
@@ -455,8 +455,8 @@ def continuo_jacket(t, Y):
 
 ##Parametros
 V_reactor = 20 #[L] volumen maximo de operacion del reactor 
-S_in = 10 #[g/L]
-F_feed = 0.1 #[L/h]
+S_in = 299.7790 #[g/L]
+F_feed = 4.9958 #[L/h]
 T_feed = 25 #[°C] temperatura de la corriente de alimentacion 
 Kd = 0.0001 #coeficiente de muerte celular [h^-1]
 miu_max = 1.09 #tasa de crecimiento especifica maxima [h^-1]
