@@ -36,7 +36,7 @@ def continuo_jacket(t, Y):
     dX = (miu - Kd)* X_calc #Porque se tienen membrana ideal
     dS = (F_feed/V_reactor) * (S_in - S_calc) - qs * X_calc
     dP = alpha * dX + qp * X_calc - (F_feed/V_reactor) * P_calc
-    dTr = (F_feed/V_reactor) * (Tr0 - Tr) + (rQ / (rho * Cp)) - (UA * (Tr - Tj)) / (rho * V_reactor * Cp)
+    dTr = (F_feed/V_reactor) * (T_feed - Tr) + (rQ / (rho * Cp)) - (UA * (Tr - Tj)) / (rho * V_reactor * Cp)
     dTj = (F/V_jacket) * (Tj_entrada - Tj) + (UA * (Tr - Tj)) / (rho * V_jacket * Cp)
     return [dX, dS, dP, dTr, dTj, dI]
 
@@ -44,6 +44,7 @@ def continuo_jacket(t, Y):
 V_reactor = 20 #[L]
 S_in = 10 #[g/L]
 F_feed = 1 #[L/h]
+T_feed = 25 #[°C]
 Kd = 0.0001 #coeficiente de muerte celular [h^-1]
 miu_max = 1.09 #tasa de crecimiento especifica maxima [h^-1]
 qs_max = 4.16 #tasa de utilizacion de sustrato especifica maxima [g/g*h]
@@ -92,7 +93,7 @@ F_max = 10 #[L/h]
 X0 = 0.43 #[g/L]
 S0 = 33 #[g/L]
 P0 = 0 #[g/L]
-Tr0 = 35 #[°C]
+Tr0 = 25 #[°C]
 Tj0 = 25 #[°C]
 I0 = 0 #[°C*h]
 array_iniciales = np.array([X0, S0, P0, Tr0, Tj0, I0])
