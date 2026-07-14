@@ -202,11 +202,11 @@ def objective (x):
     
         #Alimentacion
         if t < 5 :
-            F=0 #Fase Inicial Bacth
-            dV=0
+            F = 0 #Fase Inicial Bacth
+            dV = 0
         else:
-            F=F_feed  #Inicio fase fed-bacth
-            dV=F
+            F = F_feed  #Inicio fase fed-bacth
+            dV = F
             
         D=F/V_calc #Tasa de dilución  
         

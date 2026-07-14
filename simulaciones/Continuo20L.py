@@ -19,6 +19,14 @@ def continuo_jacket(t, Y):
     #Tasa volumetrica de generacion de energia
     rQ = Yqs * qs * X_calc
     
+    # Cambio de modo de operación
+    if t < 5:
+        D = 0          # Batch
+        F_feed_actual = 0
+    else:
+        D = F_feed / V_reactor
+        F_feed_actual = F_feed
+    
     #Controlador
     Error = Tr - T_setpoint
     F_control = F0 + Kp * Error + (Kp/Ti) * I
@@ -93,7 +101,7 @@ F_max = 10 #[L/h]
 X0 = 0.43 #[g/L]
 S0 = 33 #[g/L]
 P0 = 0 #[g/L]
-Tr0 = 25 #[°C]
+Tr0 = 30 #[°C]
 Tj0 = 25 #[°C]
 I0 = 0 #[°C*h]
 array_iniciales = np.array([X0, S0, P0, Tr0, Tj0, I0])
@@ -250,7 +258,7 @@ def objective (x):
     X0 = 0.43 #[g/L]
     S0 = 33 #[g/L]
     P0 = 0 #[g/L]
-    Tr0 = 25 #[°C]
+    Tr0 = 30 #[°C]
     Tj0 = 25 #[°C]
     I0 = 0 #[°C*h]
     P_acumulado0 = 0 #[g/L]
