@@ -318,7 +318,7 @@ V_reactor = 20
 S_in, F_feed, T_feed = 10, 0.1, 25.0
 T_setpoint = 30.0
 rho, Cp, Yqs = 1000.0, 4.182, 3963.0
-UA, V_jacket, Tj_entrada = 75*3600, 2.0, 25
+UA, V_jacket, Tj_entrada = 75*3600, 2.0, 10
 F0, F_min, F_max = 5, 0.0, 10.0
 
 # Parámetros cinéticos 
@@ -475,7 +475,7 @@ Cp = 4.182 #Capacidad calorifica del medio [J/g*°C]
 
 #Chaqueta de enfriamiento
 V_jacket = 2 #Volumen de la chaqueta [L]
-Tj_entrada = 25 #[°C]
+Tj_entrada = 10 #[°C]
 UA = 75 * 3600 #[J/h*°C]
 
 #Rendimientos
@@ -518,7 +518,7 @@ Producto = solucion.y[2]
 T_reactor = solucion.y[3]
 T_jacket = solucion.y[4]
 Integral_error = solucion.y[5]
-Volumen = solucion.y[6]
+Producto_acumulado = solucion.y[6]
 
 Error = T_reactor - T_setpoint
 F_valor = F0 + Kp * Error + (Kp/Ti) * Integral_error
