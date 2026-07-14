@@ -113,6 +113,7 @@ Producto = solucion.y[2]
 T_reactor = solucion.y[3]
 T_jacket = solucion.y[4]
 Integral_error = solucion.y[5]
+Volumen = np.ones_like(Tiempo) * V_reactor
 
 Error = T_reactor - T_setpoint
 F_valor = F0 + Kp * Error + (Kp/Ti)*Integral_error
@@ -134,6 +135,7 @@ ax3.plot(Tiempo, Error, label = 'Error', color = 'gold')
 ax3.set_xlabel('Tiempo [h]'); ax3.set_ylabel('Error [°C]')
 
 ax4.plot(Tiempo, F, label = 'Flujo refrigerante real', color = 'magenta')
+ax4.plot(Tiempo, Volumen, label='Volumen reactor', color='teal')
 ax4.set_xlabel('Tiempo [h]')
 
 for i in [ax1, ax2, ax3, ax4]:
