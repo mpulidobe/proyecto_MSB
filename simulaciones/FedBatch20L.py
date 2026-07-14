@@ -491,7 +491,6 @@ qs_max = 4.16 #tasa de utilizacion de sustrato especifica maxima [g/g*h]
 qp_max = 1.863 #tasa de produccion de lactato especifica maxima [g/g*h]
 alpha = 0.017 #constante asociada al crecimiento en Luedeking-Piret [g/g]
 
-
 #Constantes de limitacion de sustrato
 Ksx = 4.229 #Limitacion de sustrato para el crecimiento de la biomasa [g/L]
 Kss = 0.15 #Limitacion de sustrato para el consumo de sustrato [g/L]
