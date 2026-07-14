@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from scipy.integrate import solve_ivp
 
 def continuo_jacket(t, Y):
-    X, S, P, Tr, Tj, I, P_acumulado = Y
+    X, S, P, Tr, Tj, I, Pac = Y
     
     X_calc = max(0, X)
     S_calc = max(0, S)
@@ -18,34 +18,35 @@ def continuo_jacket(t, Y):
     
     #Tasa volumetrica de generacion de energia
     rQ = Yqs * qs * X_calc
-    
+    # Comportamiento
+    if t < 5:
+        F = 0  # Batch
+    else:
+        F = F_feed  # caudal constante de operacion continua
+    D = F / V_reactor  # Dilucion
+
     #Controlador
     Error = Tr - T_setpoint
-    F_control = F0 + Kp * Error + (Kp/Ti) * I
-    F = np.clip(F_control, F_min, F_max)
+    Fc_control = F0 + Kp * Error + (Kp/Ti) * I
+    Fc = np.clip(Fc_control, F_min, F_max)
     
     #Evitar windup
-    if F_control > F_max and Error > 0:
+    if Fc_control > F_max and Error > 0:
         dI = 0
-    elif F_control < F_min and Error < 0:
+    elif Fc_control < F_min and Error < 0:
         dI = 0
     else:
         dI = Error
         
-    #Cambio del modo de operacion
-    if t < 5:
-        D = 0
-    else:
-        D = F_feed/V_reactor
-    
-    #Ecuaciones diferenciales de las variables de estado
+    #Balances de masa 
     dX = (miu - Kd)* X_calc #Porque se tienen membrana ideal
     dS = D * (S_in - S_calc) - qs * X_calc
     dP = alpha * dX + qp * X_calc - D * P_calc
+    #Balances de energia 
     dTr = D * (T_feed - Tr) + (rQ / (rho * Cp)) - (UA * (Tr - Tj)) / (rho * V_reactor * Cp)
-    dTj = (F/V_jacket) * (Tj_entrada - Tj) + (UA * (Tr - Tj)) / (rho * V_jacket * Cp)
-    dP_acumulado = 0 if t<5 else F_feed * P_calc
-    return [dX, dS, dP, dTr, dTj, dI, dP_acumulado]
+    dTj = (Fc/V_jacket) * (Tj_entrada - Tj) + (UA * (Tr - Tj)) / (rho * V_jacket * Cp)
+    dPac = 0 if t<5 else F_feed * P_calc
+    return [dX, dS, dP, dTr, dTj, dI, dPac]
 
 ##Parametros
 V_reactor = 20 #[L]
@@ -79,7 +80,7 @@ Cp = 4.182 #Capacidad calorifica del medio [J/g*°C]
 
 #Chaqueta de enfriamiento
 V_jacket = 2 #Volumen de la chaqueta [L]
-Tj_entrada = 10 #[°C]
+Tj_entrada = 15 #[°C]
 UA = 75 * 3600 #[J/h*°C]
 
 #Rendimientos (Ypx, Yps, Yxs)
@@ -92,7 +93,7 @@ Yqs = 3963 #Rendimiento termico [J/g]
 T_setpoint = 30 #[°C]
 Kp = 9.59 #[L/h*°C]
 Ti = 3.66 #[h]
-F0 = 5 #[L/h]
+F0 = 1 #[L/h]
 F_min = 0 #[L/h]
 F_max = 10 #[L/h]
 
@@ -103,8 +104,8 @@ P0 = 0 #[g/L]
 Tr0 = 30 #[°C]
 Tj0 = 25 #[°C]
 I0 = 0 #[°C*h]
-P_acumulado0 = 0
-array_iniciales = np.array([X0, S0, P0, Tr0, Tj0, I0, P_acumulado0])
+Pac0 = 0
+array_iniciales = np.array([X0, S0, P0, Tr0, Tj0, I0, Pac0])
 
 #Tiempo de ejecucion
 t_start = 0
@@ -122,6 +123,7 @@ Producto = solucion.y[2]
 T_reactor = solucion.y[3]
 T_jacket = solucion.y[4]
 Integral_error = solucion.y[5]
+Producto_ac=solucion.y[6]
 Volumen = np.ones_like(Tiempo) * V_reactor
 
 Error = T_reactor - T_setpoint
@@ -137,7 +139,7 @@ print(f"Productividad volumétrica final: {D_final*Producto[-1]:.3f} g/L·h")
 print(f"Temperatura del reactor: min={T_reactor.min():.2f} °C, max={T_reactor.max():.2f} °C")
 
 #Graficas
-f1, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2)
+f1, ((ax1, ax2),(ax3, ax4),(ax5, ax6)) = plt.subplots(3, 2, figsize=(12, 10))
 ax1.plot(Tiempo, Biomasa, label = 'Biomasa', color = 'red')
 ax1.plot(Tiempo, Sustrato, label = 'Sustrato', color = 'blue')
 ax1.plot(Tiempo, Producto, label = 'Producto (lactato)', color = 'green')
@@ -155,7 +157,13 @@ ax4.plot(Tiempo, F, label = 'Flujo refrigerante real', color = 'magenta')
 ax4.plot(Tiempo, Volumen, label='Volumen reactor', color='teal')
 ax4.set_xlabel('Tiempo [h]')
 
-for i in [ax1, ax2, ax3, ax4]:
+ax5.plot(Tiempo, Producto_ac,color="darkgreen",linewidth=2,label="Producto acumulado")
+ax5.set_xlabel("Tiempo [h]")
+ax5.set_ylabel("Producto acumulado [g/L]")
+
+ax6.axis("off")
+
+for i in [ax1, ax2, ax3, ax4,ax5]:
     i.grid()
     i.legend()
     
