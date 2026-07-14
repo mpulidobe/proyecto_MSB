@@ -120,16 +120,14 @@ Error = T_reactor - T_setpoint
 F_valor = F0 + Kp * Error + (Kp/Ti)*Integral_error
 F = np.clip(F_valor, F_min, F_max)
 
-print(f"Volumen del reactor: {V_reactor:.2f} L (constante)")
-print(f"Tasa de dilución (D): {F_feed/V_reactor:.3f} h⁻¹")
-print(f"Biomasa final: {Biomasa[-1]:.3f} g/L (máxima: {Biomasa.max():.3f} g/L en t={Tiempo[np.argmax(Biomasa)]:.2f} h)")
+#Resumen numerico
+print(f"Biomasa final: {Biomasa[-1]:.3f} g/L (maxima: {Biomasa.max():.3f} g/L en t={Tiempo[np.argmax(Biomasa)]:.2f} h)")
 print(f"Sustrato final: {Sustrato[-1]:.3f} g/L")
 print(f"Producto (lactato) final: {Producto[-1]:.3f} g/L")
 print(f"Productividad volumétrica final: {(F_feed/V_reactor)*Producto[-1]:.3f} g/L·h")
 print(f"Temperatura del reactor: min={T_reactor.min():.2f} °C, max={T_reactor.max():.2f} °C")
-print(f"Flujo de refrigerante: min={F.min():.2f} L/h, max={F.max():.2f} L/h")
 
-#Grafica 
+#Graficas
 f1, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2)
 ax1.plot(Tiempo, Biomasa, label = 'Biomasa', color = 'red')
 ax1.plot(Tiempo, Sustrato, label = 'Sustrato', color = 'blue')
@@ -151,3 +149,6 @@ ax4.set_xlabel('Tiempo [h]')
 for i in [ax1, ax2, ax3, ax4]:
     i.grid()
     i.legend()
+    
+#%%
+'''Cultivo continuo con recirculacion de biomasa biorreactor 20L HCW - optimizacion'''

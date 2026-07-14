@@ -176,7 +176,7 @@ plt.tight_layout()
 plt.show()
 
 # %%
-'''Cultivo fedbatch biorreactor 20L HCW - optimizacion '''
+'''Cultivo fedbatch biorreactor 20L HCW - optimizacion'''
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -328,7 +328,7 @@ print(f"  Sfeed óptimo  : {Sfeed_opt:.4f} g/L")
 print(f"  Productividad máxima: {prod_max:.6f} g/(L·h)")
 print(f"{'='*45}\n")
 # %%
-'''Cultivo fedbatch biorreactor 20L HCW sintonizacion del controlador '''
+'''Cultivo fedbatch biorreactor 20L HCW - sintonizacion del controlador'''
 import numpy as np
 from scipy.integrate import solve_ivp
 from scipy.optimize import minimize
@@ -424,7 +424,7 @@ print(f"Ti óptimo: {Ti_final:.4f} h")
 print(f"IAE Mínimo: {resultado.fun:.4f}")
 
 # %%
-'''Cultivo fedbatch biorreactor 20L HCW  con sfeed optimizado '''
+'''Cultivo fedbatch biorreactor 20L HCW con sfeed optimizado'''
 
 import numpy as np
 import matplotlib.pyplot as plt
