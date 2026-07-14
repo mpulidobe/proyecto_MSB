@@ -497,7 +497,7 @@ X0 = 0.43 #[g/L]
 S0 = 33 #[g/L]
 P0 = 0 #[g/L]
 Tr0 = 30 #[°C]
-Tj0 = 29 #[°C]
+Tj0 = 25 #[°C]
 I0 = 0 #[°C*h]
 P_acumulado0 = 0 #[g/L]
 array_iniciales = np.array([X0, S0, P0, Tr0, Tj0, I0, P_acumulado0])
@@ -509,7 +509,7 @@ tspan = (t_start, t_stop)
 t_array = np.linspace(t_start, t_stop, num=1000)
 
 #Metodo numerico
-solucion = solve_ivp(fedbatch_jacket, tspan, array_iniciales, t_eval=t_array, method='LSODA')
+solucion = solve_ivp(continuo_jacket, tspan, array_iniciales, t_eval=t_array, method='LSODA')
 
 Tiempo = solucion.t
 Biomasa = solucion.y[0]
