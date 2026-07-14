@@ -20,35 +20,38 @@ def fedbatch_jacket(t, Y):
     #Tasa volumetrica de generacion de energia metabolica
     rQ = Yqs * qs * X_calc
 
-    #--- Alimentacion: se corta cuando el reactor llega a su volumen maximo ---
-    alimentando = V_calc < V_max
-    F_feed_ef = F_feed if alimentando else 0.0
-    D = F_feed_ef / V_calc   # tasa de dilucion instantanea (ya no es constante)
+    #--- Alimentacion
+    if t < 5 :
+        F=0 #Fase Inicial Bacth
+        dV=0
+    else:
+        F=F_feed #Inicio fase fed-bacth
+        dV=F
+        
+    D=F/V_calc #Tasa de dilución    
+    #Balances de Masa 
+    dX = (miu - Kd) * X_calc - D * X_calc
+    dS = D * (S_in - S_calc) - qs * X_calc
+    dP = (alpha * (miu - Kd) * X_calc + qp * X_calc) - D * P_calc
 
     #Controlador PI del flujo de refrigerante en la chaqueta
     Error = Tr - T_setpoint
-    F_control = F0 + Kp * Error + (Kp/Ti) * I
-    F = np.clip(F_control, F_min, F_max)
+    Fc_control = F0 + Kp * Error + (Kp/Ti) * I
+    Fc = np.clip(Fc_control, F_min, F_max) #Caudal de agual de enfriamiento 
 
     #Anti-windup
-    if F_control > F_max and Error > 0:
-        dI = 0
-    elif F_control < F_min and Error < 0:
+    if (Fc_control > F_max and Error > 0) or (Fc_control < F_min and Error < 0):
         dI = 0
     else:
         dI = Error
 
-    #Ecuaciones diferenciales de las variables de estado
-    dV = F_feed_ef
-    dX = (miu - Kd) * X_calc - D * X_calc
-    dS = D * (S_in - S_calc) - qs * X_calc
-    dP = (alpha * (miu - Kd) * X_calc + qp * X_calc) - D * P_calc
-    dTr = D * (T_feed - Tr) + (rQ / (rho * Cp)) - (UA * (Tr - Tj)) / (rho * V_calc * Cp)
-    dTj = (F/V_jacket) * (Tj_entrada - Tj) + (UA * (Tr - Tj)) / (rho * V_jacket * Cp)
+    #Balance de Energia 
+    dTr = (F/V_calc) * (T_feed - Tr) + (rQ / (rho * Cp)) - (UA * (Tr - Tj)) / (rho * V_calc * Cp) # Temperatura en el reactor 
+    dTj = (Fc/V_jacket) * (Tj_entrada - Tj) + (UA * (Tr - Tj)) / (rho * V_jacket * Cp) #Temperatura chaqueta 
     return [dX, dS, dP, dTr, dTj, dI, dV]
 
 ##Parametros
-V0 = 2          #[L] volumen inicial de caldo en el reactor 
+V0 = 1.5          #[L] volumen inicial de caldo en el reactor 
 V_max = 20        #[L] volumen maximo de operacion del reactor 
 S_in = 10 #[g/L]
 F_feed = 1 #[L/h]
@@ -58,6 +61,7 @@ miu_max = 1.09 #tasa de crecimiento especifica maxima [h^-1]
 qs_max = 4.16 #tasa de utilizacion de sustrato especifica maxima [g/g*h]
 qp_max = 1.863 #tasa de produccion de lactato especifica maxima [g/g*h]
 alpha = 0.017 #constante asociada al crecimiento en Luedeking-Piret [g/g]
+
 
 #Constantes de limitacion de sustrato
 Ksx = 4.229 #Limitacion de sustrato para el crecimiento de la biomasa [g/L]
