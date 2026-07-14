@@ -133,7 +133,7 @@ Error = T_reactor - T_setpoint
 F_valor = F0 + Kp * Error + (Kp/Ti) * Integral_error
 F = np.clip(F_valor, F_min, F_max)
 
-#--- Resumen numerico util para el informe ---
+#Resumen numerico
 t_fin_alimentacion = Tiempo[Volumen >= V_max]
 t_fin_alimentacion = t_fin_alimentacion[0] if len(t_fin_alimentacion) > 0 else None
 
@@ -149,7 +149,7 @@ print(f"Productividad volumetrica promedio: {Producto[-1]/Tiempo[-1]:.3f} g/L*h"
 print(f"Temperatura del reactor: min={T_reactor.min():.2f} °C, max={T_reactor.max():.2f} °C")
 print(f"Fraccion de tiempo con flujo de refrigerante saturado (F=F_max): {np.mean(F_valor >= F_max)*100:.1f} %")
 
-#Grafica
+#Graficas
 f1, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(11, 7))
 ax1.plot(Tiempo, Biomasa, label='Biomasa', color='red')
 ax1.plot(Tiempo, Sustrato, label='Sustrato', color='blue')
@@ -200,7 +200,7 @@ def objective (x):
         #Tasa volumetrica de generacion de energia metabolica
         rQ = Yqs * qs * X_calc
     
-        #--- Alimentacion
+        #Alimentacion
         if t < 5 :
             F=0 #Fase Inicial Bacth
             dV=0
@@ -208,7 +208,8 @@ def objective (x):
             F=F_feed  #Inicio fase fed-bacth
             dV=F
             
-        D=F/V_calc #Tasa de dilución    
+        D=F/V_calc #Tasa de dilución  
+        
         #Balances de Masa 
         dX = (miu - Kd) * X_calc - D * X_calc
         dS = D * (S_in - S_calc) - qs * X_calc
@@ -234,14 +235,13 @@ def objective (x):
     V0 = 1.5 #[L] volumen inicial de caldo en el reactor 
     V_max = 20 #[L] volumen maximo de operacion del reactor 
     S_in = x[0] #Concentracion de sustrato en la corriente de alimentacion [g/L]
-    F_feed = 1 #[L/h]
-    T_feed = 25 #[°C] temperatura de la corriente de alimentacion 
-    Kd = 0.0001 #coeficiente de muerte celular [h^-1]
-    miu_max = 1.09 #tasa de crecimiento especifica maxima [h^-1]
-    qs_max = 4.16 #tasa de utilizacion de sustrato especifica maxima [g/g*h]
-    qp_max = 1.863 #tasa de produccion de lactato especifica maxima [g/g*h]
-    alpha = 0.017 #constante asociada al crecimiento en Luedeking-Piret [g/g]
-    
+    F_feed = 1 #Caudal de alimentacion [L/h]
+    T_feed = 25 #Temperatura de la corriente de alimentacion [°C]
+    Kd = 0.0001 #Coeficiente de muerte celular [h^-1]
+    miu_max = 1.09 #Tasa de crecimiento especifica maxima [h^-1]
+    qs_max = 4.16 #Tasa de utilizacion de sustrato especifica maxima [g/g*h]
+    qp_max = 1.863 #Tasa de produccion de lactato especifica maxima [g/g*h]
+    alpha = 0.017 #Constante asociada al crecimiento en Luedeking-Piret [g/g]
     
     #Constantes de limitacion de sustrato
     Ksx = 4.229 #Limitacion de sustrato para el crecimiento de la biomasa [g/L]
@@ -340,7 +340,7 @@ S_in, F_feed, T_feed = 55.47, 1.0, 25.0
 T_setpoint = 30.0
 rho, Cp, Yqs = 1000.0, 4.182, 3963.0
 UA, V_jacket, Tj_entrada = 75*3600, 2.0, 25
-F0, F_min, F_max = 1, 0.0, 10.0
+F0, F_min, F_max = 5, 0.0, 10.0
 
 # Parámetros cinéticos 
 miu_max, qs_max, qp_max = 1.09, 4.16, 1.863
@@ -405,7 +405,7 @@ def objetivo_iae(parametros):
     if not sol.success:
         return 1e10
 
-    iae = np.trapz(
+    iae = np.trapezoid(
         np.abs(sol.y[3]-T_setpoint),
         sol.t
     )
@@ -524,7 +524,7 @@ Yqs = 3963 #Rendimiento termico [J/g]
 T_setpoint = 30 #[°C]
 Kp = 43.86 #[L/h*°C]
 Ti = 0.1000 #[h]
-F0 = 1 #[L/h]
+F0 = 5 #[L/h]
 F_min = 0 #[L/h]
 F_max = 10 #[L/h]
 
