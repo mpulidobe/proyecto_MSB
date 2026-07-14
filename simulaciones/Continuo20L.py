@@ -357,7 +357,7 @@ def objetivo_iae(parametros):
     if Kp_opt <= 0 or Ti_opt <= 0:
         return 1e10
 
-    y0 = [0.43, 33, 0, 30.5, 25, 0, 1.5]
+    y0 = [0.43, 33, 0, 30, 25, 0]
 
     t_span = (0,24)
     t_eval = np.linspace(0,24,200)
