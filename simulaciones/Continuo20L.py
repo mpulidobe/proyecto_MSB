@@ -610,6 +610,3 @@ for i in [ax1, ax2, ax3, ax4]:
 
 plt.tight_layout()
 plt.show()
-
-#%%
-'''Cultivo continuo biorreactor 20L HCW - analisis de sensibilidad'''
