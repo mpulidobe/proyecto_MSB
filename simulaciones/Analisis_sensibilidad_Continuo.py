@@ -11,45 +11,47 @@ except ImportError:
     from scipy.integrate import trapz as trapezoid
 
 def continuo_jacket(t, Y, miu_max, qp_max, Kix, Kip):
-    X, S, P, Tr, Tj, I, P_acumulado = Y
+    X, S, P, Tr, Tj, I = Y
 
     X_calc = max(0, X)
     S_calc = max(0, S)
-    P_calc = max(0, P)  
+    P_calc = max(0, P)
 
     #Tasa especifica de crecimiento
     miu = (miu_max * S_calc * Kix * np.exp(-P_calc/Kpx))/((Ksx + S_calc)*(Kix + S_calc))
     qs = (qs_max * S_calc * Kis * np.exp(-P_calc/Kps))/((Kss + S_calc)*(Kis + S_calc))
     qp = (qp_max * S_calc * Kip * np.exp(-P_calc/Kpp))/((Ksp + S_calc)*(Kip + S_calc))
 
-    #Tasa volumetrica de generacion de energia metabolica
     rQ = Yqs * qs * X_calc
 
-    #Cambio de modo de operación
-    if t < 5:
-        D = 0          # Batch
-    else:
-        D = F_feed / V_reactor
-    
-    # Controlador PI (Variable manipulada: Fc)
+    D = F_feed / V_reactor #Tasa de dilucion [h^-1]
+
+    #Controlador PI del flujo de refrigerante en la chaqueta
     Error = Tr - T_setpoint
     Fc_control = F0 + Kp * Error + (Kp/Ti) * I
     Fc = np.clip(Fc_control, F_min, F_max)
-    
-    #Ecuaciones diferenciales de las variables de estado
-    dX = (miu - Kd)* X_calc #Porque se tienen membrana ideal
+
+    #Anti-windup
+    if (Fc_control > F_max and Error > 0) or (Fc_control < F_min and Error < 0):
+        dI = 0
+    else:
+        dI = Error
+
+    #Balances de masa (membrana ideal: retencion biomasa = 1, retencion producto = 0)
+    dX = (miu - Kd) * X_calc
     dS = D * (S_in - S_calc) - qs * X_calc
-    dP = alpha * dX + qp * X_calc - D * P_calc
+    dP = alpha * (miu - Kd) * X_calc + qp * X_calc - D * P_calc
+
+    #Balance de energia
     dTr = D * (T_feed - Tr) + (rQ / (rho * Cp)) - (UA * (Tr - Tj)) / (rho * V_reactor * Cp)
     dTj = (Fc/V_jacket) * (Tj_entrada - Tj) + (UA * (Tr - Tj)) / (rho * V_jacket * Cp)
-    dI = 0 if (Fc_control > F_max and Error > 0) or (Fc_control < F_min and Error < 0) else Error
-    dP_acumulado = D * V_reactor * P_calc
-    return [dX, dS, dP, dTr, dTj, dI, dP_acumulado]
+    return [dX, dS, dP, dTr, dTj, dI]
 
 ##Parametros
 V_reactor = 20 #[L] volumen maximo de operacion del reactor 
-S_in = 80.4029 #[g/L]
-F_feed = 1 #[L/h]
+S_in = 64.4440 #[g/L]
+D_op = 1.0800 #[h^-1] optimizado
+F_feed = D_op * V_reactor #[L/h]
 T_feed = 25 #[°C] temperatura de la corriente de alimentacion 
 Kd = 0.0001 #coeficiente de muerte celular [h^-1]
 miu_max = 1.09 #tasa de crecimiento especifica maxima [h^-1]
@@ -94,23 +96,23 @@ Kp = 50 #[L/h*°C]
 Ti = 0.1000 #[h]
 F0 = 5 #[L/h]
 F_min = 0 #[L/h]
-F_max = 10 #[L/h]
+F_max = 20 #[L/h]
 
 #Condiciones iniciales
 X0 = 0.43 #[g/L]
 S0 = 33 #[g/L]
 P0 = 0 #[g/L]
 Tr0 = 30 #[°C]
-Tj0 = 25 #[°C]
+Tj0 = 29 #[°C]
 I0 = 0 #[°C*h]
 P_acumulado0 = 0 #[g/L]
-array_iniciales = np.array([X0, S0, P0, Tr0, Tj0, I0, P_acumulado0])
+array_iniciales = np.array([X0, S0, P0, Tr0, Tj0, I0])
 
 #Tiempo de ejecucion
 t_start = 0
-t_stop = 60
+t_stop = 100
 tspan = (t_start, t_stop)
-t_array = np.linspace(t_start, t_stop, num=1000)
+t_array = np.linspace(t_start, t_stop, num=5000)
 
 #Metodo numerico
 solucion = solve_ivp(continuo_jacket, tspan, array_iniciales, t_eval=t_array, args = (miu_max, qp_max, Kix, Kip), method='LSODA')
