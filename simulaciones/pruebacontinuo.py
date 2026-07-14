@@ -75,7 +75,7 @@ Cp = 4.182 #Capacidad calorifica del medio [J/g*°C]
 
 #Chaqueta de enfriamiento
 V_jacket = 2 #Volumen de la chaqueta [L]
-Tj_entrada = 5 #[°C]
+Tj_entrada = 2 #[°C]
 UA = 75 * 3600 #[J/h*°C]
 
 #Rendimientos (Ypx, Yps, Yxs)
@@ -88,7 +88,7 @@ Yqs = 3963 #Rendimiento termico [J/g]
 T_setpoint = 30 #[°C]
 Kp = 9.59 #[L/h*°C]
 Ti = 3.66 #[h]
-F0 = 5 #[L/h]
+F0 = 0 #[L/h]
 F_min = 0 #[L/h]
 F_max = 20 #[L/h]
 
