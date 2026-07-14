@@ -17,7 +17,7 @@ def continuo_jacket(t, Y):
     qp = (qp_max * S_calc * Kip * np.exp(-P_calc/Kpp))/((Ksp + S_calc)*(Kip + S_calc))
     
     #Tasa volumetrica de generacion de energia
-    rQ = (Yqs * miu * X_calc) / Yxs
+    rQ = Yqs * qs * X_calc
     
     #Controlador
     Error = Tr - T_setpoint
