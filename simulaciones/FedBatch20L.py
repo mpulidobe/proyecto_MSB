@@ -576,7 +576,7 @@ Yps_real = producto_total / substrato_alimentado
 Yxs_real = biomasa_total / substrato_alimentado
 Pv = producto_total / (Volumen[-1] * Tiempo[-1])
 
-Q = np.trapz(UA * (T_reactor - T_jacket), Tiempo)
+Q = np.trapezoid(UA * (T_reactor - T_jacket), Tiempo)
 
 # RESULTADOS DE OPERACIÓN
 
@@ -625,10 +625,6 @@ print("\n--- Desempeño térmico ---")
 print(f"Temperatura mínima reactor      : {T_reactor.min():.2f} °C")
 print(f"Temperatura máxima reactor      : {T_reactor.max():.2f} °C")
 print(f"Energía removida por chaqueta   : {Q:.2f} J")
-
-print(f"Tiempo con Fc saturado          : {np.mean(F_valor >= F_max)*100:.2f} %")
-
-print("="*60)
 
 print("\n--- Parámetros del controlador PI ---")
 print(f"Kp                             : {Kp:.2f} L/h·°C")
