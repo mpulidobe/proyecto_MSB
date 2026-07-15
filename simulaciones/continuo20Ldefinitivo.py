@@ -361,7 +361,7 @@ import matplotlib.pyplot as plt
 from scipy.integrate import solve_ivp
 
 def continuo_jacket(t, Y):
-    X, S, P, Tr, Tj, I,Pac = Y
+    X, S, P, Tr, Tj, I, Pac = Y
 
     X_calc = max(0, X)
     S_calc = max(0, S)
@@ -400,7 +400,7 @@ def continuo_jacket(t, Y):
     dTr = D * (T_feed - Tr) + (rQ / (rho * Cp)) - (UA * (Tr - Tj)) / (rho * V_reactor * Cp)
     dTj = (Fc/V_jacket) * (Tj_entrada - Tj) + (UA * (Tr - Tj)) / (rho * V_jacket * Cp)
     dPac=F*P_calc
-    return [dX, dS, dP, dTr, dTj, dI,dPac]
+    return [dX, dS, dP, dTr, dTj, dI, dPac]
 
 ##Parametros
 V_reactor = 20 #[L]
@@ -446,7 +446,7 @@ Tr0 = 30
 Tj0 = 29
 I0 = 0
 Pac0=0.0
-array_iniciales = np.array([X0, S0, P0, Tr0, Tj0, I0,Pac0])
+array_iniciales = np.array([X0, S0, P0, Tr0, Tj0, I0, Pac0])
 
 #Tiempo de ejecucion (se simula lo suficiente para alcanzar el estado estacionario)
 t_start = 0

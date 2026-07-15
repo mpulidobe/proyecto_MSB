@@ -6,7 +6,7 @@ from scipy.integrate import solve_ivp
 from matplotlib.widgets import Slider, Button
 
 def continuo_jacket(t, Y, miu_max, qp_max, Kix, Kip):
-    X, S, P, Tr, Tj, I = Y
+    X, S, P, Tr, Tj, I, Pac = Y
 
     X_calc = max(0, X)
     S_calc = max(0, S)
@@ -18,8 +18,14 @@ def continuo_jacket(t, Y, miu_max, qp_max, Kix, Kip):
     qp = (qp_max * S_calc * Kip * np.exp(-P_calc/Kpp))/((Ksp + S_calc)*(Kip + S_calc))
 
     rQ = Yqs * qs * X_calc
+    
+    #Modo de operacion 
+    if t < 5:
+        F = 0  # Batch
+    else:
+        F = F_feed 
 
-    D = F_feed / V_reactor #Tasa de dilucion [h^-1]
+    D = F / V_reactor #Tasa de dilucion [h^-1]
 
     #Controlador PI del flujo de refrigerante en la chaqueta
     Error = Tr - T_setpoint
@@ -40,7 +46,8 @@ def continuo_jacket(t, Y, miu_max, qp_max, Kix, Kip):
     #Balance de energia
     dTr = D * (T_feed - Tr) + (rQ / (rho * Cp)) - (UA * (Tr - Tj)) / (rho * V_reactor * Cp)
     dTj = (Fc/V_jacket) * (Tj_entrada - Tj) + (UA * (Tr - Tj)) / (rho * V_jacket * Cp)
-    return [dX, dS, dP, dTr, dTj, dI]
+    dPac = F * P_calc
+    return [dX, dS, dP, dTr, dTj, dI, dPac]
 
 ##Parametros
 V_reactor = 20 #[L] volumen maximo de operacion del reactor 
@@ -89,7 +96,7 @@ Yqs = 3963 #Rendimiento termico [J/g]
 T_setpoint = 30 #[°C]
 Kp = 50 #[L/h*°C]
 Ti = 0.1000 #[h]
-F0 = 5 #[L/h]
+F0 = 0 #[L/h]
 F_min = 0 #[L/h]
 F_max = 20 #[L/h]
 
@@ -100,7 +107,8 @@ P0 = 0 #[g/L]
 Tr0 = 30 #[°C]
 Tj0 = 29 #[°C]
 I0 = 0 #[°C*h]
-array_iniciales = np.array([X0, S0, P0, Tr0, Tj0, I0])
+Pac0 = 0.0 #[g]
+array_iniciales = np.array([X0, S0, P0, Tr0, Tj0, I0, Pac0])
 
 #Tiempo de ejecucion
 t_start = 0
@@ -118,6 +126,7 @@ Producto = solucion.y[2]
 T_reactor = solucion.y[3]
 T_jacket = solucion.y[4]
 Integral_error = solucion.y[5]
+Producto_ac = solucion.y[6]
 Volumen = np.ones_like(Tiempo) * V_reactor
 
 Error = T_reactor - T_setpoint
